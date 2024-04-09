@@ -47,15 +47,6 @@ def plot_lines(ax, file_name = "60MHz_standards_230607.txt", col = 'k', lw = 1.5
     x_values, data = grab_data(file_name = file_name)
     ax.plot(x_values, np.array(data)*zoom, color = col, lw = lw, ls = ls, alpha = alpha, label = label)
 
-#def align_spectra(reference, others, focus_on = 1.3, window = 0.4):
-
-
-#chi squarred shift parameter
-
-
-# Example spectra (replace these with your actual spectra)
-# Assuming spec1 and spec2 are arrays representing your spectra
-
 def align(spec1, spec2):
     #spec1 = np.array([0, 0, 1, 1, 1, 1, 0, 0, 0])
     #spec2 = np.array([0, 1, 1, 1, 0, 0, 0, 0, 0])
@@ -258,69 +249,64 @@ def align(ref_x, ref_y, dat_x, dat_y):
     D.CompareSpectra()
     return D.data_x_output, D.data_y_output
 
-x_values_1, data_1 = grab_data(file_name = "Nov29-2023_D22_LC+NG.txt")
-x_values_2, data_2 = grab_data(file_name = "Nov29-2023_D23_LC+BG.txt")
-x_values_3, data_3 = grab_data(file_name = "Nov29-2023_D24_LC+AG.txt")
+if __name__ == "__main__":
 
-x1, y1 = x_values_1, data_1
-x2, y2 = align(x1, y1, x_values_2, data_2)
-x3, y3 = align(x1, y1, x_values_3, data_3)
+    x_values_1, data_1 = grab_data(file_name = "Nov29-2023_D22_LC+NG.txt")
+    x_values_2, data_2 = grab_data(file_name = "Nov29-2023_D23_LC+BG.txt")
+    x_values_3, data_3 = grab_data(file_name = "Nov29-2023_D24_LC+AG.txt")
 
-fig, axs = plt.subplots(1,1, figsize = [5, 5])
-axs.plot(x1, y1, label = 'LC+NG')
-axs.plot(x2, y2, label = 'LC+BG')
-axs.plot(x3, y3, label = 'LC+AG')
-axs.invert_xaxis()
-axs.set_xlabel('ppm')
-axs.set_ylabel('amplitude')
-axs.legend()
-plt.show()
+    x1, y1 = x_values_1, data_1
+    x2, y2 = align(x1, y1, x_values_2, data_2)
+    x3, y3 = align(x1, y1, x_values_3, data_3)
+    '''
+    fig, axs = plt.subplots(1,1, figsize = [5, 5])
+    axs.plot(x1, y1, label = 'LC+NG')
+    axs.plot(x2, y2, label = 'LC+BG')
+    axs.plot(x3, y3, label = 'LC+AG')
+    axs.invert_xaxis()
+    axs.set_xlabel('ppm')
+    axs.set_ylabel('amplitude')
+    axs.legend()
+    plt.show()
 
-fig, axs = plt.subplots(2, 2, figsize = [8, 8])
+    fig, axs = plt.subplots(2, 2, figsize = [8, 8])
 
-my_axs = [axs[0, 0], axs[0, 1], axs[1, 0], axs[1, 1]]
-axs[0,0].set_xlim([-2, 6])
+    my_axs = [axs[0, 0], axs[0, 1], axs[1, 0], axs[1, 1]]
+    axs[0,0].set_xlim([-2, 6])
 
-axs[0,1].set_xlim([1.06, 1.29])
-axs[0,1].set_ylim([-0.25*1e8, 1.5*1e8])
+    axs[0,1].set_xlim([1.06, 1.29])
+    axs[0,1].set_ylim([-0.25*1e8, 1.5*1e8])
 
-axs[1,0].set_xlim([-0.4, 0.12])
-axs[1,0].set_ylim([-1*1e7, 4.6*1e7])
+    axs[1,0].set_xlim([-0.4, 0.12])
+    axs[1,0].set_ylim([-1*1e7, 4.6*1e7])
 
-axs[1,1].set_xlim([2.7, 5.8])
-axs[1,1].set_ylim([-0.26, 3.51*1e8])
+    axs[1,1].set_xlim([2.7, 5.8])
+    axs[1,1].set_ylim([-0.26, 3.51*1e8])
 
-for ax in my_axs:
-    ax.plot(x1, y1, label = 'LC+NG')
-    ax.plot(x2, y2, label = 'LC+BG')
-    ax.plot(x3, y3, label = 'LC+AG')
-    ax.invert_xaxis()
-    ax.set_xlabel('ppm')
-    ax.set_ylabel('amplitude')
+    for ax in my_axs:
+        ax.plot(x1, y1, label = 'LC+NG')
+        ax.plot(x2, y2, label = 'LC+BG')
+        ax.plot(x3, y3, label = 'LC+AG')
+        ax.invert_xaxis()
+        ax.set_xlabel('ppm')
+        ax.set_ylabel('amplitude')
 
-axs[0,0].legend()
-
-
-plt.show()
-
-
-'''    
-
-fig, axs = plt.subplots(1,1, figsize = [5, 5])
-plot_lines(axs, col = 'blue', file_name = "Nov29-2023_D22_LC+NG.txt", label = 'Normal Glc.')
-plot_lines(axs, col = 'green', file_name = "Nov29-2023_D23_LC+BG.txt", label = 'Borderline Glc.')
-plot_lines(axs, col = 'red', file_name = "Nov29-2023_D24_LC+AG.txt", label = 'Abnormal Glc.')
+    axs[0,0].legend()
 
 
-axs.set_xlim([-10, 10])
-
-
-
-axs.invert_xaxis()
-axs.set_xlabel('ppm')
-axs.set_ylabel('amplitude')
-axs.legend()
-
-
-plt.show()
-'''
+    plt.show()
+    '''
+    matplotlib.rcParams.update({'font.size': 15})
+    fig, axs = plt.subplots(1, 1, figsize = [6, 6])
+    axs.plot(x1, y1, label = '5 mM')
+    axs.plot(x2, y2, label = '7 mM')
+    axs.plot(x3, y3, label = '10 mM')
+    axs.set_ylim([-0.26, 3.51*1e8])
+    axs.invert_xaxis()
+    axs.set_xlabel('ppm')
+    axs.set_ylabel('amplitude')
+    axs.set_title('Glucose')
+    axs.set_xlim([3., 3.9])
+    axs.legend()
+    plt.savefig('glucose_exp_comp.png')
+    plt.close()
