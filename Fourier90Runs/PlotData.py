@@ -27,9 +27,9 @@ def big_plot():
 
     ref_x, ref_y = A.tsp_centre, A.tsp_integral
 
-    citric_acid_bounds = [2.5, 2.7]
-    lactic_acid_bounds = [1.2, 1.45]
-    glucose_bounds     = [3.0, 4.2]
+    citric_acid_bounds = [2.37, 2.82]
+    lactic_acid_bounds = [1.17, 1.50]
+    glucose_bounds     = [3.19, 3.98]
     noise_bounds       = [-2.0, -1.0]
     import matplotlib as mpl
 
@@ -58,13 +58,13 @@ def big_plot():
         A = AnalyseSpectra()
         A.InputData(x = S.water_sub_ppm, y = S.water_sub_amplitude)
         
-        A.SignalToNoise(signal_bounds = citric_acid_bounds)
+        A.SignalToNoise(signal_bounds = citric_acid_bounds, snr_choice = 'liv')
         citric_acid_snr = A.snr
 
-        A.SignalToNoise(signal_bounds = lactic_acid_bounds)
+        A.SignalToNoise(signal_bounds = lactic_acid_bounds, snr_choice = 'liv')
         lactic_acid_snr = A.snr
 
-        A.SignalToNoise(signal_bounds = glucose_bounds)
+        A.SignalToNoise(signal_bounds = glucose_bounds, snr_choice = 'liv')
         glucose_snr = A.snr
 
         snrs = [citric_acid_snr, lactic_acid_snr, glucose_snr]
@@ -78,13 +78,13 @@ def big_plot():
         x_shift = ref_x - tsp_x
         A.ScaleSpectra(y_scaling = y_scale, x_shift = x_shift)
 
-        A.SignalToNoise(signal_bounds = citric_acid_bounds)
+        A.SignalToNoise(signal_bounds = citric_acid_bounds, snr_choice = 'liv')
         citric_acid_snr = A.snr
 
-        A.SignalToNoise(signal_bounds = lactic_acid_bounds)
+        A.SignalToNoise(signal_bounds = lactic_acid_bounds, snr_choice = 'liv')
         lactic_acid_snr = A.snr
 
-        A.SignalToNoise(signal_bounds = glucose_bounds)
+        A.SignalToNoise(signal_bounds = glucose_bounds, snr_choice = 'liv')
         glucose_snr = A.snr
 
         snrs = [citric_acid_snr, lactic_acid_snr, glucose_snr]
@@ -296,10 +296,10 @@ def big_plot_scaled(scan = 256):
     A.FitTSP()
 
     ref_x, ref_y = A.tsp_centre, A.tsp_integral
-
-    citric_acid_bounds = [2.5, 2.7]
-    lactic_acid_bounds = [1.2, 1.45]
-    glucose_bounds     = [3.0, 4.2]
+    
+    citric_acid_bounds = [2.37, 2.82]
+    lactic_acid_bounds = [1.17, 1.50]
+    glucose_bounds     = [3.19, 3.98]
     noise_bounds       = [-2.0, -1.0]
     import matplotlib as mpl
 
@@ -585,9 +585,9 @@ def d22_vs_d4(scan = '256'):
     '''
 
 scans = [1, 2, 4, 8, 16, 32, 64, 128, 256]
-citric_acid_bounds = [2.5, 2.7]
-lactic_acid_bounds = [1.2, 1.45]
-glucose_bounds     = [3.0, 4.2]
+citric_acid_bounds = [2.37, 2.82]
+lactic_acid_bounds = [1.17, 1.50]
+glucose_bounds     = [3.19, 3.98]
 noise_bounds       = [-2.0, -1.0]
 
 def getim(scan, sample, pulse):
@@ -686,9 +686,9 @@ def combo():
 
     ref_x, ref_y = A.tsp_centre, A.tsp_integral
 
-    citric_acid_bounds = [2.5, 2.7]
-    lactic_acid_bounds = [1.2, 1.45]
-    glucose_bounds     = [3.0, 4.2]
+    citric_acid_bounds = [2.37, 2.82]
+    lactic_acid_bounds = [1.17, 1.50]
+    glucose_bounds     = [3.19, 3.98]
     noise_bounds       = [-2.0, -1.0]
     import matplotlib as mpl
 
@@ -868,6 +868,7 @@ def combo():
 def mega_combo():
     scans = [1, 2, 4, 8, 16, 32, 64, 128, 256]
     sample = 'D24'
+    snr_choice = 'brk'
     times = []
 
     for scan in scans:
@@ -888,10 +889,13 @@ def mega_combo():
     A.FitTSP()
 
     ref_x, ref_y = A.tsp_centre, A.tsp_integral
-
-    citric_acid_bounds = [2.5, 2.7]
-    lactic_acid_bounds = [1.2, 1.45]
-    glucose_bounds     = [3.0, 4.2]
+    
+    citric_acid_bounds = [2.37, 2.82]
+    lactic_acid_bounds = [1.17, 1.50]
+    glucose_bounds     = [3.19, 3.98]
+    #citric_acid_bounds = [2.5, 2.7]
+    #lactic_acid_bounds = [1.2, 1.45]
+    #glucose_bounds     = [3.0, 4.2]
     noise_bounds       = [-2.0, -1.0]
     import matplotlib as mpl
 
@@ -920,13 +924,13 @@ def mega_combo():
         A = AnalyseSpectra()
         A.InputData(x = S.water_sub_ppm, y = S.water_sub_amplitude)
         
-        A.SignalToNoise(signal_bounds = citric_acid_bounds)
+        A.SignalToNoise(signal_bounds = citric_acid_bounds, snr_choice = snr_choice)
         citric_acid_snr = A.snr
 
-        A.SignalToNoise(signal_bounds = lactic_acid_bounds)
+        A.SignalToNoise(signal_bounds = lactic_acid_bounds, snr_choice = snr_choice)
         lactic_acid_snr = A.snr
 
-        A.SignalToNoise(signal_bounds = glucose_bounds)
+        A.SignalToNoise(signal_bounds = glucose_bounds, snr_choice = snr_choice)
         glucose_snr = A.snr
 
         snrs = [citric_acid_snr, lactic_acid_snr, glucose_snr]
@@ -940,13 +944,13 @@ def mega_combo():
         x_shift = ref_x - tsp_x
         A.ScaleSpectra(y_scaling = y_scale, x_shift = x_shift)
 
-        A.SignalToNoise(signal_bounds = citric_acid_bounds)
+        A.SignalToNoise(signal_bounds = citric_acid_bounds, snr_choice = snr_choice)
         citric_acid_snr = A.snr
 
-        A.SignalToNoise(signal_bounds = lactic_acid_bounds)
+        A.SignalToNoise(signal_bounds = lactic_acid_bounds, snr_choice = snr_choice)
         lactic_acid_snr = A.snr
 
-        A.SignalToNoise(signal_bounds = glucose_bounds)
+        A.SignalToNoise(signal_bounds = glucose_bounds, snr_choice = snr_choice)
         glucose_snr = A.snr
 
         snrs = [citric_acid_snr, lactic_acid_snr, glucose_snr]
@@ -958,7 +962,6 @@ def mega_combo():
 
     snrs_orig = np.array(SNR_ORIG)
     snrs_scale = np.array(SNR_SCALED)
-
 
     glucose_colour = 'orange'
     citrate_colour = 'green'
@@ -994,10 +997,12 @@ def mega_combo():
     ax_top.fill_betweenx([llim, ulim], lactic_acid_bounds[0], lactic_acid_bounds[1], color= lactate_colour, alpha=fill_alpha)
     ax_top.fill_betweenx([llim, ulim], glucose_bounds[0], glucose_bounds[1], color=glucose_colour, alpha=fill_alpha)
     ax_top.fill_betweenx([llim, ulim], noise_bounds[0], noise_bounds[1], color= noise_colour, alpha=fill_alpha)
+    ax_top.axvline(-0.05, color='lightgray', linewidth=0.5, alpha=0.5)    
+    ax_top.axvline(0.05, color='lightgray', linewidth=0.5, alpha=0.5)    
 
     ax_top.set_xlim([-2.1, 5.5])
     ax_top.set_ylim([-0.5 * 1e8, 1.6 *1e9])
-    ax_top.set_xlabel('ppm')
+    ax_top.set_xlabel('$\delta$ [ppm]')
     ax_top.invert_xaxis()
     #ax_top.legend(custom_lines, legend_labels, frameon = False, fontsize = 8, ncol = 3, loc = 7)
 
@@ -1011,7 +1016,7 @@ def mega_combo():
     for i in range(0, len(scans)):
         ax_mid_left.plot(X_SCALED[i], Y_SCALED[i], lw = 1.0, color = colours[i + 1])
 
-    ax_mid_left.set_xlabel('ppm')
+    ax_mid_left.set_xlabel('$\delta$ [ppm]')
     ax_mid_left.set_xlim([glucose_bounds[0] - 0.1, glucose_bounds[1] + 0.1])
     ax_mid_left.fill_betweenx([llim, ulim], glucose_bounds[0], glucose_bounds[1], color= glucose_colour, alpha=fill_alpha)
     ax_mid_left.set_ylim([-0.9 * 1e8, 1.4*1e9])
@@ -1027,7 +1032,7 @@ def mega_combo():
     for i in range(0, len(scans)):
         ax_mid_right.plot(X_SCALED[i], Y_SCALED[i], lw = 1.0, color = colours[i + 1])
 
-    ax_mid_right.set_xlabel('ppm')
+    ax_mid_right.set_xlabel('$\delta$ [ppm]')
     ax_mid_right.set_xlim([citric_acid_bounds[0] - 0.1, citric_acid_bounds[1] + 0.1])
     ax_mid_right.fill_betweenx([llim, ulim], citric_acid_bounds[0], citric_acid_bounds[1], color= citrate_colour, alpha=fill_alpha)
     ax_mid_right.set_ylim([-0.9 * 1e8, 0.15*1e9])
@@ -1043,7 +1048,7 @@ def mega_combo():
     for i in range(0, len(scans)):
         ax_bottom_left.plot(X_SCALED[i], Y_SCALED[i], lw = 1.0, color = colours[i + 1])
 
-    ax_bottom_left.set_xlabel('ppm')
+    ax_bottom_left.set_xlabel('$\delta$ [ppm]')
     ax_bottom_left.set_xlim([lactic_acid_bounds[0] - 0.1, lactic_acid_bounds[1] + 0.1])
     ax_bottom_left.fill_betweenx([llim, ulim], lactic_acid_bounds[0], lactic_acid_bounds[1], color= lactate_colour, alpha=fill_alpha)
     ax_bottom_left.set_ylim([-0.5 * 1e8, 0.7*1e9])
@@ -1052,44 +1057,58 @@ def mega_combo():
 
     # Bottom right panel
     ax_bottom_right = fig.add_subplot(gs[2, 1])
-    ax_bottom_right.plot(scans, np.ones(len(scans))*3., color = 'k', lw = 0.7, alpha = 0.5, ls = '--')
-    ax_bottom_right.scatter(scans, snrs_orig[:,2], color = glucose_colour, alpha = fill_alpha*8, marker = 'x', label = 'Glucose')
-    ax_bottom_right.scatter(scans, snrs_orig[:,1], color = lactate_colour, alpha = fill_alpha*8, marker = 'x', label = 'Lactate')
-    ax_bottom_right.scatter(scans, snrs_orig[:,0], color = citrate_colour, alpha = fill_alpha*8, marker = 'x', label = 'Citrate')
-    ax_bottom_right.plot(scans, snrs_orig[:,2], color = glucose_colour, alpha = fill_alpha*8, lw = 0.3)
-    ax_bottom_right.plot(scans, snrs_orig[:,1], color = lactate_colour, alpha = fill_alpha*8, lw = 0.3)
-    ax_bottom_right.plot(scans, snrs_orig[:,0], color = citrate_colour, alpha = fill_alpha*8, lw = 0.3)
+    #ax_bottom_right.plot(scans, np.ones(len(scans))*3., color = 'k', lw = 0.5, alpha = 0.5, ls = '-')
+    #ax_bottom_right.plot(scans, np.ones(len(scans))*10., color = 'k', lw = 0.5, alpha = 0.5, ls = '-')
+
+    ax_bottom_right.scatter(scans, snrs_orig[:,2], color = glucose_colour, marker = 's', edgecolor = 'k', label = 'Glucose')#, alpha = fill_alpha*8)
+    ax_bottom_right.scatter(scans, snrs_orig[:,1], color = lactate_colour, marker = 's', edgecolor = 'k', label = 'Lactate')#, alpha = fill_alpha*8)
+    ax_bottom_right.scatter(scans, snrs_orig[:,0], color = citrate_colour, marker = 's', edgecolor = 'k', label = 'Citrate')#, alpha = fill_alpha*8)
+    ax_bottom_right.plot(scans, snrs_orig[:,2], color = glucose_colour, lw = 0.3)#, alpha = fill_alpha*8)
+    ax_bottom_right.plot(scans, snrs_orig[:,1], color = lactate_colour, lw = 0.3)#, alpha = fill_alpha*8)
+    ax_bottom_right.plot(scans, snrs_orig[:,0], color = citrate_colour, lw = 0.3)#, alpha = fill_alpha*8)
     ax_bottom_right.set_xscale('log')
-    ax_bottom_right.set_xlabel('Number of scans')
-    ax_bottom_right.set_ylabel('SNR')
+    ax_bottom_right.set_xlabel('$n_{\mathrm{s}}$')
 
-    custom_lines  = [(Line2D([0], [0], color=glucose_colour, linestyle='-')),
-                    (Line2D([0], [0], color=lactate_colour, linestyle='-')),
-                    (Line2D([0], [0], color=citrate_colour, linestyle='-')),
-                    (Line2D([0], [0], color='k', alpha = 0.5, linestyle='--'))]
+    if snr_choice == 'brk':
+        snr_lab = '$\mathrm{SNR}_{\mathrm{Brk.}}$'
+    elif snr_choice == 'agi':
+        snr_lab = '$\mathrm{SNR}_{\mathrm{Agi.}}$'
+    elif snr_choice == 'liv':
+        snr_lab = '$\mathrm{SNR}_{\mathrm{Int.}}$'
 
-    ax_bottom_right.legend(custom_lines, ['Glucose', 'Lactate', 'Citrate', 'LOD = 3'], frameon = False, loc = 'upper left')
+    ax_bottom_right.set_ylabel(snr_lab)
+    ax_bottom_right.set_xlim([0.7, 335])
 
 
-    #ax_bottom_right.set_ylabel('I')
 
-    #ax_bottom_right.plot(times, np.ones(len(times))*3., color = 'k', lw = 0.7, alpha = 0.5, ls = '--')
-    #ax_bottom_right.plot(times, snrs_orig[:,0], color = citrate_colour, alpha = fill_alpha*8)
-    #ax_bottom_right.plot(times, snrs_orig[:,1], color = lactate_colour, alpha = fill_alpha*8)
-    #ax_bottom_right.plot(times, snrs_orig[:,2], color = glucose_colour, alpha = fill_alpha*8)
-    #ax_bottom_right.set_xlabel('Time (secs)')
-    #ax_bottom_right.set_ylabel('SNR')
-    #ax_bottom_right.set_yscale('log')
-    #ax_bottom_right.set_xscale('log')
+    custom_lines  = [(Line2D([0], [0], color=glucose_colour,markeredgecolor = 'k',  marker = 's', linestyle='-')),
+                    (Line2D([0], [0], color=lactate_colour, markeredgecolor = 'k', marker = 's', linestyle='-')),
+                    (Line2D([0], [0], color=citrate_colour, markeredgecolor = 'k', marker = 's', linestyle='-'))]
+
+    ax_bottom_right.legend(custom_lines, ['Glucose', 'Lactate', 'Citrate'], frameon = False, loc = 'upper left')
+
+
+    x_min, x_max = ax_bottom_right.get_xlim()
+    y_min, y_max = ax_bottom_right.get_ylim()
+
+    
+
+    ax_bottom_right.fill_between([x_min, x_max], 0, 3, color= 'lightsalmon', alpha=0.2)
+    ax_bottom_right.fill_between([x_min, x_max], 3, 10, color= 'navajowhite', alpha=0.2)
+    ax_bottom_right.fill_between([x_min, x_max], 10, y_max*10, color= 'lightgreen', alpha=0.2)
+    ax_bottom_right.set_ylim([0.9, y_max*1.2])
+    ax_bottom_right.set_yscale('log')
 
     glc_label = '\\textbf{Glucose}\n \\textbf{10mM}'
     cit_label = '\\textbf{Citrate}\n \\textbf{0.2mM}'
     lac_label = '\\textbf{Lactate}\n \\textbf{2mM}'
+    tsp_label = '\\textbf{TSP}\n \\textbf{XmM}'
     noise_label = '\\textbf{Noise}'
 
     x_pos_glc = sum(glucose_bounds)/2.
     y_pos_main = 1.3*1e9
     ax_top.annotate(glc_label, xy=(x_pos_glc, y_pos_main), xytext=(x_pos_glc, y_pos_main), horizontalalignment='center', color = glucose_colour)
+    ax_top.annotate(tsp_label, xy=(0.0, y_pos_main), xytext=(0.0, y_pos_main), horizontalalignment='center', color = 'k')
     
     
     y_pos = 1.*1e9
@@ -1152,6 +1171,10 @@ def mega_combo():
     for ax in my_axs:
         ax.tick_params(axis='x', direction='in', which='both')
         ax.tick_params(axis='y', direction='in', which='both')
+
+    my_axs = [ax_top, ax_mid_left, ax_mid_right, ax_bottom_left]
+    for ax in my_axs:
+        ax.set_ylabel('$I(\delta)$')
     #plt.subplots_adjust(left=0.05, right=20)
 
     #fig.subplots_adjust(right=0.8)
@@ -1189,10 +1212,10 @@ def mega_combo():
 
     #print(range(num_colors))
     #print(xtick_labs)
-#
+
     cb.set_ticks(range(num_colors))
     cb.ax.set_yticklabels(xtick_labs)
-    cb.set_label('Number of scans', fontsize = 13)
+    cb.set_label('$n_{\mathrm{s}}$', fontsize = 13)
     
     plt.subplots_adjust(hspace = 0.3)
     
@@ -1200,11 +1223,12 @@ def mega_combo():
     #fig.tight_layout()
 
     # Show plot
-    plt.savefig('Paper_Figs/test.pdf', bbox_inches = 'tight', pad_inches = 0.2 )
+    #plt.show()
+    plt.savefig('Paper_Figs/test_%s.pdf' % snr_choice, bbox_inches = 'tight', pad_inches = 0.2 )
     plt.close()
 
 
-#mega_combo()
-big_plot()
+mega_combo()
+#big_plot()
 
 

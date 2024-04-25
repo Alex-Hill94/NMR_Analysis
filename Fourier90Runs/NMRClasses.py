@@ -415,21 +415,116 @@ class AnalyseSpectra:
 
     def SignalToNoise(self,
                       signal_bounds = [2.5, 2.7],
-                      noise_bounds  = [-2.0, -1.0]):
+                      noise_bounds  = [-2.0, -1.0], 
+                      snr_choice = 'liv'):
+
+
+        def snr_agilent(x, y, noise_bounds, signal_bounds):
+            noise_mask = (x >= np.min(noise_bounds)) * (x <= np.max(noise_bounds))
+            noise_x, noise_y = x[noise_mask], y[noise_mask]
+            noise = (sum(noise_y**2)/len(noise_y))**(0.5)
+
+            signal_mask = (x >= np.min(signal_bounds)) * (x <= np.max(signal_bounds))
+            signal_x, signal_y = x[signal_mask], y[signal_mask]
+            signal = np.max(signal_y)
+            SNR = signal/noise
+            ppm_max = signal_x[signal_y == signal]
+            print("AGILENT", signal, noise, SNR)
+            return SNR, signal, noise
+
+        def snr_liverpool(x, y, noise_bounds, signal_bounds):
+            noise_mask = (x >= np.min(noise_bounds)) * (x <= np.max(noise_bounds))
+            signal_mask = (x >= np.min(signal_bounds)) * (x <= np.max(signal_bounds))
+            noise = get_area(x[noise_mask], y[noise_mask], avg = True)
+            sig = get_area(x[signal_mask], y[signal_mask], avg = True)
+            snr = sig/noise 
+            #plt.figure()
+            #plt.plot(x, y)
+            #plt.plot(x[signal_mask], y[signal_mask])
+            #plt.plot(x[noise_mask], y[noise_mask])
+            #plt.show()
+            return snr, sig, noise
+
+        def snr_bruker(x, y, noise_bounds, signal_bounds):
+            def _is_odd(num):
+                return num % 2 != 0
+
+
+            def _bruker_noise(n_values):
+            
+                isodd = _is_odd(len(n_values))
+                if isodd:
+                    n_values = n_values[:-1]
+                N = len(n_values)
+                n = int((N-1)/2)
+                n_list = np.arange(-n, n + 1, 1)
+                n_list2 = np.arange(1, n+1, 1)
+
+                part_one = 0
+                for i in range(0, len(n_list)):
+                    update = n_values[i]**2
+                    part_one+=update
+                
+                part_two = 0
+                for i in range(0, len(n_list)):
+                    update = n_values[i]
+                    part_two+=update
+                part_two = part_two**2
+
+                part_three = 0
+                for i in n_list2:
+                    update = i * (n_values[i] -  n_values[-i])
+                    part_three += update
+                part_three = 3 * (part_three**2) / (N**2 - 1)
+
+
+                numerator = part_one - 1/N * (part_two + part_three)
+                denominator = N - 1
+                noise = np.sqrt(numerator/denominator)
+
+                return noise
+
+            noise_mask = (x >= np.min(noise_bounds)) * (x <= np.max(noise_bounds))
+            signal_mask = (x >= np.min(signal_bounds)) * (x <= np.max(signal_bounds))
+
+            signal_values = y[signal_mask]
+            SIGNAL = np.nanmax(signal_values)
+            signal_loc = x[signal_mask][signal_values == SIGNAL]
+
+            noise_values = y[noise_mask]
+            NOISE  = _bruker_noise(noise_values)
+            SNR = SIGNAL / (2.* NOISE)
+            print('NOISF1: %s NOISF2: %s' % (np.max(noise_bounds), np.min(noise_bounds)))
+            print('SIG F1: %s SIG F2: %s' % (np.max(x), np.min(x)))
+            print('Singal (%s ppm) / Noise' % signal_loc)
+            print('%s/(%s*2) SINO: %s' % (SIGNAL, NOISE, SNR))
+            return SNR, SIGNAL, NOISE
+
+
 
         xdata = self.processed_ppm
         ydata = self.processed_amplitude
 
-        noise_mask = (xdata > noise_bounds[0]) * (xdata < noise_bounds[1])
-        sig_mask = (xdata > signal_bounds[0]) * (xdata < signal_bounds[1])
-
-        noise = get_area(xdata[noise_mask], ydata[noise_mask], avg = True)
-        sig = get_area(xdata[sig_mask], ydata[sig_mask], avg = True)
+        #noise_mask = (xdata > noise_bounds[0]) * (xdata < noise_bounds[1])
+        #sig_mask = (xdata > signal_bounds[0]) * (xdata < signal_bounds[1])
+        #noise = get_area(xdata[noise_mask], ydata[noise_mask], avg = True)
+        #sig = get_area(xdata[sig_mask], ydata[sig_mask], avg = True)
         
+        if snr_choice == 'agi':
+            snr_function = snr_agilent
+        elif snr_choice == 'liv':
+            snr_function = snr_liverpool
+        elif snr_choice == 'brk':
+            snr_function = snr_bruker
+        else:
+            snr_function = snr_liverpool
+        
+        snr, sig, noise = snr_function(xdata, ydata, noise_bounds, signal_bounds)
+
         self.spectra_signal = sig
         self.spectra_noise = noise
-        self.snr  = sig/noise
-        self.signal_bounds = sig_mask
+        self.snr  = snr#sig/noise
+        self.signal_bounds = signal_bounds
         self.noise_bounds = noise_bounds
 
     def ClearSignalandNoise(self):

@@ -173,7 +173,7 @@ def snr_agilent(x, y, noise_bounds, signal_bounds, verbose = False):
     ppm_max = signal_x[signal_y == signal]
     if verbose:
         print("AGILENT", signal, noise, SNR)
-    return SNR, signal, ppm_max
+    return SNR, signal, noise, ppm_max
 
 def snr_liverpool(x, y, noise_bounds, signal_bounds):
     noise_mask = (x >= np.min(noise_bounds)) * (x <= np.max(noise_bounds))
@@ -246,7 +246,7 @@ def snr_bruker(x, y, noise_bounds, signal_bounds, verbose = False):
 
 
 
-def comp_time_snr(sample = 'D24', pulse = 'zg30', scan = 256, sig_bounds = [3.0, 4.2], noise_bounds = [-2.0, -1.0], snr_choise = 'brk'):
+def comp_time_snr(sample = 'D24', pulse = 'zg30', scan = 256, sig_bounds = [3.0, 4.2], noise_bounds = [-2.0, -1.0], snr_choice = 'brk'):
     if pulse == 'zg30':
         path = "/Users/alexhill/Desktop/Metabolomics/Rerun_Data/20240119_RERUN_3"
     else:
@@ -272,11 +272,11 @@ def comp_time_snr(sample = 'D24', pulse = 'zg30', scan = 256, sig_bounds = [3.0,
     if snr_choice == 'brk':
         snr, sig, noise = snr_bruker(x, y, noise_bounds, sig_bounds)
     elif snr_choice == 'agi':
-        snr, sig, ppm_loc = snr_agilent(x, y, noise_bounds, sig_bounds)
+        snr, sig, noise, ppm_loc = snr_agilent(x, y, noise_bounds, sig_bounds)
     elif snr_choice == 'liv':
         snr, sig, noise = snr_liverpool(x, y, noise_bounds, sig_bounds)
 
-    return snr, time_taken
+    return snr, sig, noise, time_taken
 
 
 
@@ -301,7 +301,7 @@ def comp_snr():
             blab = bound_lab[i]
             for scan in scans:
                 for snr_choice in snr_choices:
-                    SNR, TIME = comp_time_snr(sample = 'D24', pulse = pulse, scan = scan, sig_bounds = bound, noise_bounds = [-2.0, -1.0], snr_choise = snr_choice)
+                    SNR, SIG, NOISE, TIME = comp_time_snr(sample = 'D24', pulse = pulse, scan = scan, sig_bounds = bound, noise_bounds = [-2.0, -1.0], snr_choice = snr_choice)
                     data = [pulse, blab, scan, snr_choice, SNR, TIME]
                     DATA.append(data)
 
@@ -310,6 +310,8 @@ def comp_snr():
     lactate_colour = 'blue'
     zg30_ls = '-'
     noes_ls = '--'
+    zg30_mrk = 's'
+    noes_mrk = 'o'
     
     DATA = np.array(DATA)
     pulse_array = DATA[:,0].astype('str')
@@ -335,50 +337,82 @@ def comp_snr():
 
     plt.close()
 
+    lw = 0.5
+
+    matplotlib.rc('text', usetex=True)
+
+    # Set the default font to Times New Roman
+    matplotlib.rcParams['font.family'] = 'serif'
+    matplotlib.rcParams['font.size'] = 12
+
+
+
     fig, axs = plt.subplots(1,2, figsize = [12, 5])
 
-    axs[0].plot(scan_array[glc_mask * brk_mask * zg3_mask], snr_array[glc_mask * brk_mask * zg3_mask], color = glucose_colour, ls = zg30_ls)
-    axs[0].plot(scan_array[glc_mask * brk_mask * noe_mask], snr_array[glc_mask * brk_mask * noe_mask], color = glucose_colour, ls = noes_ls)
+    axs[0].plot(scan_array[glc_mask * brk_mask * zg3_mask], snr_array[glc_mask * brk_mask * zg3_mask], color = glucose_colour, ls = zg30_ls, lw = lw)
+    axs[0].plot(scan_array[glc_mask * brk_mask * noe_mask], snr_array[glc_mask * brk_mask * noe_mask], color = glucose_colour, ls = noes_ls, lw = lw)
+    axs[0].scatter(scan_array[glc_mask * brk_mask * zg3_mask], snr_array[glc_mask * brk_mask * zg3_mask], edgecolor = 'k', color = glucose_colour, marker = zg30_mrk)
+    axs[0].scatter(scan_array[glc_mask * brk_mask * noe_mask], snr_array[glc_mask * brk_mask * noe_mask], edgecolor = 'k', color = glucose_colour, marker = noes_mrk)
 
-    axs[0].plot(scan_array[lac_mask * brk_mask * zg3_mask], snr_array[lac_mask * brk_mask * zg3_mask], color = lactate_colour, ls = zg30_ls)
-    axs[0].plot(scan_array[lac_mask * brk_mask * noe_mask], snr_array[lac_mask * brk_mask * noe_mask], color = lactate_colour, ls = noes_ls)
+    axs[0].plot(scan_array[lac_mask * brk_mask * zg3_mask], snr_array[lac_mask * brk_mask * zg3_mask], color = lactate_colour, ls = zg30_ls, lw = lw)
+    axs[0].plot(scan_array[lac_mask * brk_mask * noe_mask], snr_array[lac_mask * brk_mask * noe_mask], color = lactate_colour, ls = noes_ls, lw = lw)
+    axs[0].scatter(scan_array[lac_mask * brk_mask * zg3_mask], snr_array[lac_mask * brk_mask * zg3_mask], edgecolor = 'k', color = lactate_colour, marker = zg30_mrk)
+    axs[0].scatter(scan_array[lac_mask * brk_mask * noe_mask], snr_array[lac_mask * brk_mask * noe_mask], edgecolor = 'k', color = lactate_colour, marker = noes_mrk)
 
-    axs[0].plot(scan_array[cit_mask * brk_mask * zg3_mask], snr_array[cit_mask * brk_mask * zg3_mask], color = citrate_colour, ls = zg30_ls)
-    axs[0].plot(scan_array[cit_mask * brk_mask * noe_mask], snr_array[cit_mask * brk_mask * noe_mask], color = citrate_colour, ls = noes_ls)
+    axs[0].plot(scan_array[cit_mask * brk_mask * zg3_mask], snr_array[cit_mask * brk_mask * zg3_mask], color = citrate_colour, ls = zg30_ls, lw = lw)
+    axs[0].plot(scan_array[cit_mask * brk_mask * noe_mask], snr_array[cit_mask * brk_mask * noe_mask], color = citrate_colour, ls = noes_ls, lw = lw)
+    axs[0].scatter(scan_array[cit_mask * brk_mask * zg3_mask], snr_array[cit_mask * brk_mask * zg3_mask], edgecolor = 'k', color = citrate_colour, marker = zg30_mrk)
+    axs[0].scatter(scan_array[cit_mask * brk_mask * noe_mask], snr_array[cit_mask * brk_mask * noe_mask], edgecolor = 'k', color = citrate_colour, marker = noes_mrk)
 
-    axs[0].set_ylabel('Buker SNR')
-    axs[0].set_xlabel('Number of Scans')
+    axs[0].set_ylabel('$\mathrm{SNR}_{\mathrm{Brk.}}$')
+    axs[0].set_xlabel('Number of scans ($n_{\mathrm{s}}$)')
+    #axs[0].set_yscale('log')
+    #axs[1].set_yscale('log')
 
-    custom_lines = [Line2D([0], [0], color=glucose_colour, linestyle='-'),
-                    Line2D([0], [0], color=lactate_colour, linestyle='-'),
-                    Line2D([0], [0], color=citrate_colour, linestyle='-'),
-                    Line2D([0], [0], color='k', linestyle=zg30_ls),
-                    Line2D([0], [0], color='k', linestyle=noes_ls)]
+    custom_lines = [Line2D([0], [0], color=glucose_colour, linestyle='-', lw = 2),
+                    Line2D([0], [0], color=lactate_colour, linestyle='-', lw = 2),
+                    Line2D([0], [0], color=citrate_colour, linestyle='-', lw = 2),
+                    Line2D([0], [0], color='k', marker=zg30_mrk),
+                    Line2D([0], [0], color='k', marker=noes_mrk, linestyle = '--')]
     
-    axs[0].legend(custom_lines, ['Glucose', 'Lactate', 'Citrate', 'zg30', 'noesypr1dwv2'])
+    axs[0].legend(custom_lines, ['Glucose [10 mM]', 'Lactate [2 mM]', 'Citrate [0.2 mM]', 'zg30', 'noesypr1dwv2'])
 
 
-    axs[1].plot(time_array[glc_mask * brk_mask * zg3_mask], snr_array[glc_mask * brk_mask * zg3_mask], color = glucose_colour, ls = zg30_ls)
-    axs[1].plot(time_array[glc_mask * brk_mask * noe_mask], snr_array[glc_mask * brk_mask * noe_mask], color = glucose_colour, ls = noes_ls)
+    axs[1].plot(time_array[glc_mask * brk_mask * zg3_mask], snr_array[glc_mask * brk_mask * zg3_mask], color = glucose_colour, ls = zg30_ls, lw = lw)
+    axs[1].plot(time_array[glc_mask * brk_mask * noe_mask], snr_array[glc_mask * brk_mask * noe_mask], color = glucose_colour, ls = noes_ls, lw = lw)
+    axs[1].scatter(time_array[glc_mask * brk_mask * zg3_mask], snr_array[glc_mask * brk_mask * zg3_mask], edgecolor = 'k', color = glucose_colour, marker = zg30_mrk)
+    axs[1].scatter(time_array[glc_mask * brk_mask * noe_mask], snr_array[glc_mask * brk_mask * noe_mask], edgecolor = 'k', color = glucose_colour, marker = noes_mrk)
 
-    axs[1].plot(time_array[lac_mask * brk_mask * zg3_mask], snr_array[lac_mask * brk_mask * zg3_mask], color = lactate_colour, ls = zg30_ls)
-    axs[1].plot(time_array[lac_mask * brk_mask * noe_mask], snr_array[lac_mask * brk_mask * noe_mask], color = lactate_colour, ls = noes_ls)
+    axs[1].plot(time_array[lac_mask * brk_mask * zg3_mask], snr_array[lac_mask * brk_mask * zg3_mask], color = lactate_colour, ls = zg30_ls, lw = lw)
+    axs[1].plot(time_array[lac_mask * brk_mask * noe_mask], snr_array[lac_mask * brk_mask * noe_mask], color = lactate_colour, ls = noes_ls, lw = lw)
+    axs[1].scatter(time_array[lac_mask * brk_mask * zg3_mask], snr_array[lac_mask * brk_mask * zg3_mask], edgecolor = 'k', color = lactate_colour, marker = zg30_mrk)
+    axs[1].scatter(time_array[lac_mask * brk_mask * noe_mask], snr_array[lac_mask * brk_mask * noe_mask], edgecolor = 'k', color = lactate_colour, marker = noes_mrk)
 
-    axs[1].plot(time_array[cit_mask * brk_mask * zg3_mask], snr_array[cit_mask * brk_mask * zg3_mask], color = citrate_colour, ls = zg30_ls)
-    axs[1].plot(time_array[cit_mask * brk_mask * noe_mask], snr_array[cit_mask * brk_mask * noe_mask], color = citrate_colour, ls = noes_ls)
+    axs[1].plot(time_array[cit_mask * brk_mask * zg3_mask], snr_array[cit_mask * brk_mask * zg3_mask], color = citrate_colour, ls = zg30_ls, lw = lw)
+    axs[1].plot(time_array[cit_mask * brk_mask * noe_mask], snr_array[cit_mask * brk_mask * noe_mask], color = citrate_colour, ls = noes_ls, lw = lw)
+    axs[1].scatter(time_array[cit_mask * brk_mask * zg3_mask], snr_array[cit_mask * brk_mask * zg3_mask], edgecolor = 'k', color = citrate_colour, marker = zg30_mrk)
+    axs[1].scatter(time_array[cit_mask * brk_mask * noe_mask], snr_array[cit_mask * brk_mask * noe_mask], edgecolor = 'k', color = citrate_colour, marker = noes_mrk)
 
-    axs[1].set_ylabel('Buker SNR')
-    axs[1].set_xlabel('Time Taken (seconds)')
+    axs[1].set_ylabel('$\mathrm{SNR}_{\mathrm{Brk.}}$')
+    axs[1].set_xlabel('Experiment time [secs]')
 
-    plt.savefig('Paper_Figs/pulses_snr.pdf')
-    plt.close()
+    my_axs = [axs[0], axs[1]]
 
-    plt.figure()
-    plt.plot(scan_array[cit_mask * brk_mask * zg3_mask], time_array[cit_mask * brk_mask * zg3_mask], label = 'zg30', ls = zg30_ls, color = 'k')
-    plt.plot(scan_array[cit_mask * brk_mask * noe_mask], time_array[cit_mask * brk_mask * noe_mask], label = 'zg30', ls = noes_ls, color = 'k')
-    plt.xlabel('Scans')
-    plt.ylabel('Time')
-    plt.savefig('Paper_Figs/scan_time_comp.png')
+    for ax in my_axs:
+        ax.tick_params(axis='x', direction='in', which='both')
+        ax.tick_params(axis='y', direction='in', which='both')
+
+
+    plt.show()
+    #plt.savefig('Paper_Figs/pulses_snr.pdf')
+    #plt.close()
+
+   #plt.figure()
+   #plt.plot(scan_array[cit_mask * brk_mask * zg3_mask], time_array[cit_mask * brk_mask * zg3_mask], label = 'zg30', ls = zg30_ls, color = 'k')
+   #plt.plot(scan_array[cit_mask * brk_mask * noe_mask], time_array[cit_mask * brk_mask * noe_mask], label = 'zg30', ls = noes_ls, color = 'k')
+   #plt.xlabel('Scans')
+   #plt.ylabel('Time')
+   #plt.savefig('Paper_Figs/scan_time_comp.png')
 
 
 
@@ -394,7 +428,12 @@ def plot_pulses():
     bounds = [lactic_acid_bounds, glucose_bounds, citric_acid_bounds]
     bound_lab = ['lac', 'glc', 'cit']
     snr_choices = ['brk', 'liv', 'agi']
-    
+    glucose_colour = 'orange'
+    citrate_colour = 'green'
+    lactate_colour = 'blue'
+    noise_colour   = 'black'
+    fill_alpha         = 0.05
+
     import matplotlib as mpl
     cmap = mpl.colormaps['BrBG']
     colours = cmap(np.linspace(0, 1, len(scans) + 2))
@@ -412,7 +451,7 @@ def plot_pulses():
 
     # Set the default font to Times New Roman
     matplotlib.rcParams['font.family'] = 'serif'
-    matplotlib.rcParams['font.size'] = 10
+    matplotlib.rcParams['font.size'] = 12
 
 
     fig, axs = plt.subplots(2, 1, figsize = [12, 7])
@@ -438,19 +477,48 @@ def plot_pulses():
     x_pos_glc = 0.7 + sum(glucose_bounds)/2. 
     y_pos_main = 1.2*1e9
     axs[0].annotate(label, xy=(x_pos_glc - 0.12, y_pos_main), xytext=(x_pos_glc - 0.12, y_pos_main), horizontalalignment='center', color = 'k')
+
+
+
+    glc_label = '\\textbf{Glucose}\n \\textbf{10mM}'
+    cit_label = '\\textbf{Citrate}\n \\textbf{0.2mM}'
+    lac_label = '\\textbf{Lactate}\n \\textbf{2mM}'
+    noise_label = '\\textbf{Noise}'
+
     #axs[0].annotate('   ', xy=(x_pos_glc + 0.35, y_pos_main*1.12), xytext=(x_pos_glc + 0.35, y_pos_main*1.12 - (0.1*1e9)), horizontalalignment='center', color = 'k',
      #               arrowprops=dict(facecolor='black', shrink=0.05))
     axs[0].arrow(x = x_pos_glc + 0.3, y = y_pos_main*1.12 - (0.1*1e9), dx = 0, dy = 0.1*1e9, head_length = 0.03*1e9, width = 0.025, facecolor= 'k')
+    x_pos = 0.03+sum(glucose_bounds)/2.
+    y_pos = 1.2*1e9
+    axs[0].annotate(glc_label, xy=(x_pos, y_pos), xytext=(x_pos, y_pos), horizontalalignment='center', color = glucose_colour, fontsize = 10)
+
+    x_pos = sum(citric_acid_bounds)/2.
+    y_pos = 1.2*1e9
+    axs[0].annotate(cit_label, xy=(x_pos, y_pos), xytext=(x_pos, y_pos), horizontalalignment='center', color = citrate_colour, fontsize = 10)
+
+
+    x_pos = sum(lactic_acid_bounds)/2.
+    y_pos = 1.2*1e9
+    axs[0].annotate(lac_label, xy=(x_pos, y_pos), xytext=(x_pos, y_pos), horizontalalignment='center', color = lactate_colour, fontsize = 10)
+
 
     my_axs = [axs[0], axs[1]]
 
     axs[0].set_ylim([-2. * 1e7, 1.41 *1e9])
     axs[1].set_ylim([-0.75 * 1e9, 2.304 *1e9])
     for ax in my_axs:
+        llim, ulim = ax.get_ylim()
+        ax.fill_betweenx([llim, ulim], glucose_bounds[0], glucose_bounds[1], color= glucose_colour, alpha=fill_alpha)
+        ax.fill_betweenx([llim, ulim], lactic_acid_bounds[0], lactic_acid_bounds[1], color= lactate_colour, alpha=fill_alpha)
+        ax.fill_betweenx([llim, ulim], citric_acid_bounds[0], citric_acid_bounds[1], color= citrate_colour, alpha=fill_alpha)
+        ax.tick_params(axis='x', direction='in', which='both')
+        ax.tick_params(axis='y', direction='in', which='both')
+
         ax.set_xlim([-0.5, 5.5])
-        ax.set_xlabel('ppm')
         ax.invert_xaxis()
 
+    axs[0].set_xticklabels([])
+    axs[1].set_xlabel('ppm')
     zg_lab = '\\textbf{zg30}'
     noes_lab = '\\textbf{noesypr1dwv2}'
     
@@ -491,16 +559,24 @@ def plot_pulses():
 #
     cb.set_ticks(range(num_colors))
     cb.ax.set_yticklabels(xtick_labs)
-    cb.set_label('Number of scans', fontsize = 13)
+    cb.set_label('Number of scans ($n_{\mathrm{s}}$)', fontsize = 13)
     
 
 
-
-    plt.savefig('Paper_Figs/pulse_comparison.png')
-
+    plt.savefig('Paper_Figs/pulse_comparison.pdf')
+    #plt.show()
 
     plt.close()
 
+def get_snr(sample = 'D24', pulse = 'noesypr1dwv2', scan = 256, sig_bounds = [3.0, 4.2], noise_bounds = [-2.0, -1.0], snr_choice = 'brk'): 
 
-if __name__ == '__main__':
-    plot_pulses()
+    SNR, SIG, NOISE, TIME = comp_time_snr(sample = sample, pulse = pulse, scan = scan, sig_bounds = sig_bounds, noise_bounds =noise_bounds, snr_choice = snr_choice)
+    data = [pulse, scan, snr_choice, SNR, SIG, NOISE, TIME]
+    return data
+
+#plot_pulses()
+comp_snr()
+#data = get_snr()
+
+#if __name__ == '__main__':
+#    plot_pulses()

@@ -160,7 +160,6 @@ def plot_spectrum_with_peaks(x, y, peak_indices):
     # Show the plot
     plt.show()
 
-
 def snr_agilent(x, y, noise_bounds, signal_bounds):
     noise_mask = (x >= np.min(noise_bounds)) * (x <= np.max(noise_bounds))
     noise_x, noise_y = x[noise_mask], y[noise_mask]
@@ -247,7 +246,7 @@ def snr_bruker(x, y, noise_bounds, signal_bounds):
 
 if __name__ == '__main__':
 
-    scans = [8, 16, 32, 64, 128, 256]
+    scans = [1, 2, 4, 8, 16, 32, 64, 128, 256]
 
     lactic_acid_bounds = [1.2, 1.45]
     glucose_bounds     = [3.0, 4.2]
@@ -264,7 +263,7 @@ if __name__ == '__main__':
             S = LoadSpectra()
             S.ReadTextFile(nscan = scan, 
                         sample = 'D24',
-                        pulse = 'noesypr1dwv2')
+                        pulse = 'zg30')
             #S.SubtractWater()
             x = S.initial_ppm
             y = S.initial_amplitude
@@ -295,8 +294,9 @@ if __name__ == '__main__':
         ax.legend()
         ax.set_yscale('log')
         ax.set_ylim([1, 205])
-        plt.savefig('Paper_Figs/snr_measure_noesy_%s.png' % bound_lab[i])
-        plt.close()
+        plt.show()
+        #plt.savefig('Paper_Figs/snr_measure_noesy_%s.png' % bound_lab[i])
+        #plt.close()
 
 
     #lactate_colour = 'blue'
