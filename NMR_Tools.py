@@ -155,7 +155,8 @@ def get_centre(x, y, method = 'max', plot = True):
     return centre
 
 def get_area(X,Y, avg = True):
-    "Note if avg = True, get_area returns the integral area divided by the xrange subtended. Absolute value of y is taken"
+    '''Note if avg = True, get_area returns the integral area 
+    divided by the xrange subtended. Absolute value of y is taken'''
     if X[0] > X[-1]:
         X, Y = np.flip(X), abs(np.flip(Y))
     xrange = np.nanmax(X) - np.nanmin(X)

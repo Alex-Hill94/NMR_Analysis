@@ -8,6 +8,7 @@ import csv
 import pandas as pd 
 import matplotlib.gridspec as gridspec
 from matplotlib.lines import Line2D
+import h5py as h5
 
 class LoadSpectra:
 
@@ -27,10 +28,14 @@ class LoadSpectra:
                     path = "/Users/alexhill/Desktop/Metabolomics/Data_Analysis/BrukerRerun3Data",
                     sample = 'D24',
                     pulse = 'zg30',
-                    nscan = '256'):
+                    nscan = '256', 
+                    filename = None):
 
         self.filepath = path
-        self.filename = "%s_%s_ns%s.txt" % (sample, pulse, nscan)
+        if filename is not None:
+            self.filename = filename
+        else:
+            self.filename = "%s_%s_ns%s.txt" % (sample, pulse, nscan)
 
         x, y = grab_data(path = self.filepath, file_name = self.filename)
         self.initial_ppm = x
@@ -245,7 +250,8 @@ class AnalyseSpectra:
         self.spectra_noise  = []
         self.signal_bounds = []
         self.noise_bounds = []
-    
+        self.temp_integral_area = []
+
     def InputData(self,
                 x = [],
                 y = []):
@@ -419,7 +425,7 @@ class AnalyseSpectra:
                       snr_choice = 'liv'):
 
 
-        def snr_agilent(x, y, noise_bounds, signal_bounds):
+        def snr_agilent(x, y, noise_bounds, signal_bounds, verbose = False):
             noise_mask = (x >= np.min(noise_bounds)) * (x <= np.max(noise_bounds))
             noise_x, noise_y = x[noise_mask], y[noise_mask]
             noise = (sum(noise_y**2)/len(noise_y))**(0.5)
@@ -429,23 +435,22 @@ class AnalyseSpectra:
             signal = np.max(signal_y)
             SNR = signal/noise
             ppm_max = signal_x[signal_y == signal]
-            print("AGILENT", signal, noise, SNR)
+            if verbose:
+                print("AGILENT", signal, noise, SNR)
             return SNR, signal, noise
 
-        def snr_liverpool(x, y, noise_bounds, signal_bounds):
+        def snr_liverpool(x, y, noise_bounds, signal_bounds, verbose = False):
             noise_mask = (x >= np.min(noise_bounds)) * (x <= np.max(noise_bounds))
             signal_mask = (x >= np.min(signal_bounds)) * (x <= np.max(signal_bounds))
             noise = get_area(x[noise_mask], y[noise_mask], avg = True)
             sig = get_area(x[signal_mask], y[signal_mask], avg = True)
             snr = sig/noise 
-            #plt.figure()
-            #plt.plot(x, y)
-            #plt.plot(x[signal_mask], y[signal_mask])
-            #plt.plot(x[noise_mask], y[noise_mask])
-            #plt.show()
+            if verbose:
+                print("LIVERPOOL", signal, noise, SNR)
+
             return snr, sig, noise
 
-        def snr_bruker(x, y, noise_bounds, signal_bounds):
+        def snr_bruker(x, y, noise_bounds, signal_bounds, verbose = False):
             def _is_odd(num):
                 return num % 2 != 0
 
@@ -494,10 +499,12 @@ class AnalyseSpectra:
             noise_values = y[noise_mask]
             NOISE  = _bruker_noise(noise_values)
             SNR = SIGNAL / (2.* NOISE)
-            print('NOISF1: %s NOISF2: %s' % (np.max(noise_bounds), np.min(noise_bounds)))
-            print('SIG F1: %s SIG F2: %s' % (np.max(x), np.min(x)))
-            print('Singal (%s ppm) / Noise' % signal_loc)
-            print('%s/(%s*2) SINO: %s' % (SIGNAL, NOISE, SNR))
+            if verbose:
+                print('BRUKER')
+                print('NOISF1: %s NOISF2: %s' % (np.max(noise_bounds), np.min(noise_bounds)))
+                print('SIG F1: %s SIG F2: %s' % (np.max(x), np.min(x)))
+                print('Singal (%s ppm) / Noise' % signal_loc)
+                print('%s/(%s*2) SINO: %s' % (SIGNAL, NOISE, SNR))
             return SNR, SIGNAL, NOISE
 
 
@@ -532,3 +539,54 @@ class AnalyseSpectra:
         self.spectra_noise  = []
         self.signal_bounds = []
         self.noise_bounds = []
+
+    def GetIntegral(self,
+                    bounds = [-10., 10.]):
+
+        if len(self.processed_ppm) == 0:
+            xdata, ydata = self.initial_ppm, self.initial_amplitude
+        else: 
+            xdata, ydata = self.processed_ppm, self.processed_amplitude
+
+        mask = (xdata >= np.min(bounds)) * (xdata <= np.max(bounds))
+        X, Y = xdata[mask], ydata[mask]
+        self.temp_integral_area = get_area(X, Y, avg = False)
+
+
+class LoadSimulatedSpectra:
+    def __init__(self):
+        self.fileroot = []
+        self.filename = []
+        self.ppm = []
+        self.amplitude = []
+        self.processed_ppm = []
+        self.processed_amplitude = []
+
+    def LoadSimSpec(self, 
+                    fileroot = '/Users/alexhill/Software/ccpnmr3.2.0/',
+                    metabolite = 'Glucose'):
+        self.fileroot = fileroot
+        possible_metabolites = ['Glucose', 'Lactate', 'Citrate']
+        
+        if np.isin(metabolite, possible_metabolites):
+            if metabolite == 'Glucose':
+                self.filename = 'glucose_nonoise_80MHz.hdf5'
+            elif metabolite == 'Lactate':
+                self.filename = 'lactate31_nonoise_80MHz.hdf5'
+            elif metabolite == 'Citrate':
+                self.filename = 'citrate_nonoise_80MHz.hdf5'
+            path = self.fileroot+self.filename
+            u = h5.File(path, 'r')
+            self.ppm = u['80.0/x'][()]
+            self.amplitude = u['80.0/toty'][()]
+            u.close()
+
+    def ScaleSpectra(self, 
+                     yscaling = 1., bounds = [-10., 10.]):
+        
+        xdata, ydata = self.ppm, self.amplitude
+        mask = (xdata >= np.min(bounds)) * ( (xdata <= np.max(bounds)))
+        X, Y = xdata[mask], ydata[mask]
+        reference_area = get_area(X, Y, avg = False)
+        self.processed_ppm = self.ppm
+        self.processed_amplitude = self.amplitude * (yscaling/reference_area)

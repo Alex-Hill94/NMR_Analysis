@@ -375,7 +375,7 @@ def comp_snr():
                     Line2D([0], [0], color='k', marker=zg30_mrk),
                     Line2D([0], [0], color='k', marker=noes_mrk, linestyle = '--')]
     
-    axs[0].legend(custom_lines, ['Glucose [10 mM]', 'Lactate [2 mM]', 'Citrate [0.2 mM]', 'zg30', 'noesypr1dwv2'])
+    axs[0].legend(custom_lines, ['Glucose [10 mM]', 'Lactate [2 mM]', 'Citrate [0.2 mM]', 'zg30', 'noesypr1dwv2'], ncol = 2, fontsize = 9)
 
 
     axs[1].plot(time_array[glc_mask * brk_mask * zg3_mask], snr_array[glc_mask * brk_mask * zg3_mask], color = glucose_colour, ls = zg30_ls, lw = lw)
@@ -401,11 +401,13 @@ def comp_snr():
     for ax in my_axs:
         ax.tick_params(axis='x', direction='in', which='both')
         ax.tick_params(axis='y', direction='in', which='both')
+        ax.set_ylim([1, 250])
+        ax.set_yscale('log')
+        ax.set_xscale('log')
 
-
-    plt.show()
-    #plt.savefig('Paper_Figs/pulses_snr.pdf')
-    #plt.close()
+    #plt.show()
+    plt.savefig('Paper_Figs/pulses_snr.pdf', bbox_inches = 'tight', pad_inches = 0.05)
+    plt.close()
 
    #plt.figure()
    #plt.plot(scan_array[cit_mask * brk_mask * zg3_mask], time_array[cit_mask * brk_mask * zg3_mask], label = 'zg30', ls = zg30_ls, color = 'k')

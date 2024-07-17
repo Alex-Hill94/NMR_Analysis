@@ -1,5 +1,11 @@
 from NMRClasses import *
 import matplotlib
+from bounds import *
+
+''' 
+This code uses the classes contained within the script NMRClasses.py (LoadSpectra, AnalyseSpectra)
+to load NMR data and plot it.
+'''
 
 def big_plot():
     scans = [1, 2, 4, 8, 16, 32, 64, 128, 256]
@@ -978,11 +984,11 @@ def mega_combo():
 
     # Set the default font to Times New Roman
     matplotlib.rcParams['font.family'] = 'serif'
-    matplotlib.rcParams['font.size'] = 10
+    matplotlib.rcParams['font.size'] = 12
 
 
     # Create figure and gridspec
-    fig = plt.figure(figsize=(10, 8))
+    fig = plt.figure(figsize=(10, 10))
     gs = fig.add_gridspec(3, 2, width_ratios = [1.0, 1.0])
 
     # Top panel spanning two columns
@@ -1223,12 +1229,797 @@ def mega_combo():
     #fig.tight_layout()
 
     # Show plot
+    plt.show()
+    #plt.savefig('Paper_Figs/test_%s.pdf' % snr_choice, bbox_inches = 'tight', pad_inches = 0.05 )
+    #plt.close()
+
+def single_panel():
+    scans = [1, 2, 4, 8, 16, 32, 64, 128, 256]
+    sample = 'D24'
+    snr_choice = 'brk'
+    times = []
+
+    for scan in scans:
+        S = LoadSpectra()
+        S.ReadRawData(nscan = scan, 
+                    sample = sample,
+                    pulse = 'zg30')
+        tt = S.time_taken
+        times.append(tt)
+
+    S = LoadSpectra()
+    S.ReadTextFile(sample = sample, nscan = 256)
+    S.ReadRawData(sample=sample)
+    #S.SubtractWater()
+
+    A = AnalyseSpectra()
+    A.InputData(x = S.initial_ppm, y = S.initial_amplitude)
+    A.FitTSP()
+
+    ref_x, ref_y = A.tsp_centre, A.tsp_integral
+    
+    citric_acid_bounds = [2.37, 2.82]
+    lactic_acid_bounds = [1.17, 1.50]
+    glucose_bounds     = [3.19, 3.98]
+    #citric_acid_bounds = [2.5, 2.7]
+    #lactic_acid_bounds = [1.2, 1.45]
+    #glucose_bounds     = [3.0, 4.2]
+    noise_bounds       = [-2.0, -1.0]
+    import matplotlib as mpl
+
+    cmap = mpl.colormaps['BrBG']
+
+    colours = cmap(np.linspace(0, 1, len(scans) + 2))
+
+    X_ORIG = []
+    Y_ORIG = []
+
+    X_SCALED = []
+    Y_SCALED = []
+
+    SNR_ORIG = []
+    SNR_SCALED = []
+
+
+    for scan in scans:
+        print(scan)
+        S = LoadSpectra()
+        S.ReadTextFile(nscan = scan, sample =sample)
+        S.SubtractWater()
+        X_ORIG.append(S.initial_ppm)
+        Y_ORIG.append(S.initial_amplitude)
+
+        A = AnalyseSpectra()
+        A.InputData(x = S.initial_ppm, y = S.initial_amplitude)
+        
+        A.SignalToNoise(signal_bounds = citric_acid_bounds, snr_choice = snr_choice)
+        citric_acid_snr = A.snr
+
+        A.SignalToNoise(signal_bounds = lactic_acid_bounds, snr_choice = snr_choice)
+        lactic_acid_snr = A.snr
+
+        A.SignalToNoise(signal_bounds = glucose_bounds, snr_choice = snr_choice)
+        glucose_snr = A.snr
+
+        snrs = [citric_acid_snr, lactic_acid_snr, glucose_snr]
+
+        SNR_ORIG.append(snrs)
+
+
+        A.FitTSP()
+        tsp_x, tsp_y = A.tsp_centre, A.tsp_integral
+        y_scale = ref_y/tsp_y
+        x_shift = ref_x - tsp_x
+        A.ScaleSpectra(y_scaling = y_scale, x_shift = x_shift)
+
+        A.SignalToNoise(signal_bounds = citric_acid_bounds, snr_choice = snr_choice)
+        citric_acid_snr = A.snr
+
+        A.SignalToNoise(signal_bounds = lactic_acid_bounds, snr_choice = snr_choice)
+        lactic_acid_snr = A.snr
+
+        A.SignalToNoise(signal_bounds = glucose_bounds, snr_choice = snr_choice)
+        glucose_snr = A.snr
+
+        snrs = [citric_acid_snr, lactic_acid_snr, glucose_snr]
+
+
+        X_SCALED.append(A.processed_ppm)
+        Y_SCALED.append(A.processed_amplitude)
+        SNR_SCALED.append(snrs)
+
+    snrs_orig = np.array(SNR_ORIG)
+    snrs_scale = np.array(SNR_SCALED)
+
+    A.GetIntegral(bounds = citric_acid_bounds)
+    citrate_int = A.temp_integral_area
+
+    A.GetIntegral(bounds = lactic_acid_bounds)
+    lactate_int = A.temp_integral_area
+
+    A.GetIntegral(bounds = glucose_bounds)
+    glucose_int = A.temp_integral_area
+
+
+    L = LoadSimulatedSpectra()
+    
+    L.LoadSimSpec(metabolite = 'Glucose')
+    L.ScaleSpectra(bounds = glucose_bounds,
+                    yscaling = glucose_int)
+    xdata_glc, ydata_glc = L.processed_ppm, L.processed_amplitude
+    
+
+    L.LoadSimSpec(metabolite = 'Lactate')
+    L.ScaleSpectra(bounds = lactic_acid_bounds,
+                    yscaling = lactate_int)
+    xdata_lac, ydata_lac = L.processed_ppm, L.processed_amplitude
+    
+    
+    L.LoadSimSpec(metabolite = 'Citrate')
+    L.ScaleSpectra(bounds = citric_acid_bounds,
+                    yscaling = citrate_int)
+    xdata_cit, ydata_cit = L.processed_ppm, L.processed_amplitude
+
+    ppm_simulated = xdata_glc
+    amp_simulated = ydata_glc+ydata_lac+ydata_cit
+
+
+    glucose_colour = 'orange'
+    citrate_colour = 'green'
+    lactate_colour = 'blue'
+    noise_colour   = 'black'
+    fill_alpha         = 0.07
+
+
+    custom_lines = []
+    legend_labels = []
+
+    # Enable LaTeX rendering
+    matplotlib.rc('text', usetex=True)
+
+    # Set the default font to Times New Roman
+    matplotlib.rcParams['font.family'] = 'serif'
+    matplotlib.rcParams['font.size'] = 12
+
+
+    # Create figure and gridspecs
+    fig, axs = plt.subplots(1,1, figsize=(10, 4))
+
+    # Top panel spanning two columns
+    ax_top = axs
+    for i in range(0, len(scans)):
+        ax_top.plot(X_SCALED[i], Y_SCALED[i], label = 'nscan = %s' % scans[i], lw = 0.5, color = colours[i + 1])
+        custom_lines.append(Line2D([0], [0], color=colours[i+1], linestyle='-'))
+        legend_labels.append('ns = %s' % scans[i])
+
+    ax_top.plot(ppm_simulated, amp_simulated, color = 'magenta', lw = 1.1, ls = '--')
+
+    llim, ulim = ax_top.get_ylim()
+    ax_top.fill_betweenx([llim, ulim], citric_acid_bounds[0], citric_acid_bounds[1], color= citrate_colour, alpha=fill_alpha)
+    ax_top.fill_betweenx([llim, ulim], lactic_acid_bounds[0], lactic_acid_bounds[1], color= lactate_colour, alpha=fill_alpha)
+    ax_top.fill_betweenx([llim, ulim], glucose_bounds[0], glucose_bounds[1], color=glucose_colour, alpha=fill_alpha)
+    ax_top.fill_betweenx([llim, ulim], noise_bounds[0], noise_bounds[1], color= noise_colour, alpha=fill_alpha)
+    ax_top.axvline(-0.05, color='lightgray', linewidth=0.5, alpha=0.5)    
+    ax_top.axvline(0.05, color='lightgray', linewidth=0.5, alpha=0.5)    
+    XLIM = [0.9, 4.51]
+    YLIM = [-3 * 1e8, 1.65 *1e9]
+
+    ax_top.set_xlim(XLIM)
+    #ax_top.set_ylim([-0.5 * 1e8, 1.6 *1e9])
+    ax_top.set_ylabel('$I(\delta)$')
+    ax_top.set_xlabel('$\delta$ [ppm]')
+    ax_top.invert_xaxis()
+    #ax_top.legend(custom_lines, legend_labels, frameon = False, fontsize = 8, ncol = 3, loc = 7)
+
+    #ax_bottom = axs[1]
+
+    #ax_bottom.plot(ppm_simulated, amp_simulated, color = 'magenta')
+    #ax_bottom.plot(ppm_simulated, ydata_glc)
+    #ax_bottom.plot(ppm_simulated, ydata_lac)
+    #ax_bottom.plot(ppm_simulated, ydata_cit)
+
+    sim_label = '\\textbf{Simulation}'
+    glc_label = '\\textbf{Glucose}\n \\textbf{10mM}'
+    cit_label = '\\textbf{Citrate}\n \\textbf{0.2mM}'
+    lac_label = '\\textbf{Lactate}\n \\textbf{2mM}'
+    tsp_label = '\\textbf{TSP}\n \\textbf{XmM}'
+    noise_label = '\\textbf{Noise}'
+
+    x_pos_lac = sum(lactic_acid_bounds)/2.
+    x_pos_cit = sum(citric_acid_bounds)/2.
+    x_pos_glc = sum(glucose_bounds)/2.
+    x_pos_sim = (np.nanmin(citric_acid_bounds) + np.nanmax(lactic_acid_bounds))/2.
+    y_pos = 1.41*1e9
+    ax_top.annotate(lac_label, xy=(x_pos_lac, y_pos), xytext=(x_pos_lac, y_pos), horizontalalignment='center', color = lactate_colour)
+    ax_top.annotate(glc_label, xy=(x_pos_glc + 0.05, y_pos), xytext=(x_pos_glc + 0.05, y_pos), horizontalalignment='center', color = glucose_colour)
+    ax_top.annotate(cit_label, xy=(x_pos_cit, y_pos), xytext=(x_pos_cit, y_pos), horizontalalignment='center', color = citrate_colour)
+    ax_top.annotate(sim_label, xy=(x_pos_sim, y_pos/3.), xytext=(x_pos_sim, y_pos/3.), horizontalalignment='center', color = 'magenta')
+
+    import matplotlib.colorbar as colorbar
+    import matplotlib.colors as clr
+
+    cb_colors = []
+    xtick_labs = []
+
+    for i in range(0, len(scans)):
+        cb_colors.append(colours[i + 1])
+        xtick_labs.append("%s" % scans[i])
+
+    num_colors = len(cb_colors)
+    cmap_ = clr.ListedColormap(cb_colors)
+
+    top_pos = ax_top.get_position()
+    bottom_pos = ax_top.get_position()
+    
+    #ylims = ax_bottom.get_ylim()
+    ax_top.set_ylim(YLIM)
+    
+    # Calculate the position for the colorbar
+    colorbar_left = 0.92
+    colorbar_bottom = bottom_pos.y0
+    colorbar_width = 0.02
+    colorbar_height = top_pos.y1 - bottom_pos.y0
+    colorbar_rect = [colorbar_left, colorbar_bottom, colorbar_width, colorbar_height]
+
+    my_axs = [ax_top, ]
+
+    for ax in my_axs:
+        ax.tick_params(axis='x', direction='in', which='both')
+        ax.tick_params(axis='y', direction='in', which='both')
+
+
+    ax = fig.add_axes(colorbar_rect)
+
+    cb = colorbar.ColorbarBase(ax, orientation='vertical',
+                            cmap=cmap_, norm=plt.Normalize(-0.5, num_colors - 0.5))
+
+    #print(range(num_colors))
+    #print(xtick_labs)
+
+    cb.set_ticks(range(num_colors))
+    cb.ax.set_yticklabels(xtick_labs)
+    cb.set_label('$n_{\mathrm{s}}$', fontsize = 13)
+    
+    plt.subplots_adjust(hspace = 0.3)
+    
+    
+    #fig.tight_layout()
+
+    # Show plot
     #plt.show()
-    plt.savefig('Paper_Figs/test_%s.pdf' % snr_choice, bbox_inches = 'tight', pad_inches = 0.2 )
+    plt.savefig('/Users/alexhill/Documents/GitHub/NMR_Analysis/Figs_For_Gil/single_pan.pdf', bbox_inches = 'tight', pad_inches = 0.05)
     plt.close()
 
 
-mega_combo()
+def compare_concs():
+    scans = [1, 2, 4, 8, 16, 32, 64, 128, 256]
+    #sample = 'D24'
+    snr_choice = 'int'
+    sample = 'D24'
+    water_sub = False
+    import matplotlib as mpl
+    cmap = mpl.colormaps['BrBG']
+    colours = cmap(np.linspace(0, 1, len(scans) + 2))
+
+    def _get_xysnr(sample = 'D23', water_sub = True):
+        X_ORIG = []
+        Y_ORIG = []
+        SNR_ORIG = []
+
+        for scan in scans:
+            print(scan)
+            S = LoadSpectra()
+            S.ReadTextFile(nscan = scan, sample =sample)
+            x = S.initial_ppm
+            y = S.initial_amplitude
+            if water_sub:
+                S.SubtractWater()
+                x = S.water_sub_ppm
+                y = S.water_sub_amplitude
+
+            X_ORIG.append(x)
+            Y_ORIG.append(y)
+
+            A = AnalyseSpectra()
+            A.InputData(x = x, y = y)
+            
+            A.SignalToNoise(signal_bounds = citric_acid_bounds, snr_choice = snr_choice)
+            citric_acid_snr = A.snr
+
+            A.SignalToNoise(signal_bounds = lactic_acid_bounds, snr_choice = snr_choice)
+            lactic_acid_snr = A.snr
+
+            A.SignalToNoise(signal_bounds = glucose_bounds, snr_choice = snr_choice)
+            glucose_snr = A.snr
+
+            snrs = [citric_acid_snr, lactic_acid_snr, glucose_snr]
+
+            SNR_ORIG.append(snrs)
+
+        snrs_orig = np.array(SNR_ORIG)
+        return X_ORIG, Y_ORIG, snrs_orig
+
+    X_ORIG_D22, Y_ORIG_D22, snrs_orig_D22 = _get_xysnr(sample = 'D22', water_sub = water_sub)
+    X_ORIG_D24, Y_ORIG_D24, snrs_orig_D24 = _get_xysnr(sample = 'D24', water_sub = water_sub)
+
+    glucose_colour = 'orange'
+    citrate_colour = 'green'
+    lactate_colour = 'blue'
+    noise_colour   = 'black'
+    fill_alpha         = 0.07
+
+    custom_lines = []
+    legend_labels = []
+
+    # Enable LaTeX rendering
+    matplotlib.rc('text', usetex=True)
+
+    # Set the default font to Times New Roman
+    matplotlib.rcParams['font.family'] = 'serif'
+    matplotlib.rcParams['font.size'] = 12
+
+    
+    # Create figure and gridspecs
+    fig, axs = plt.subplots(2,1, figsize=(10, 8))
+
+    # Top panel spanning two columns
+    ax_top = axs[0]
+    ax_bottom = axs[1]
+    for i in range(0, len(scans)):
+        ax_top.plot(X_ORIG_D22[i], Y_ORIG_D22[i], label = 'nscan = %s' % scans[i], lw = 0.5, color = colours[i + 1])
+        ax_bottom.plot(X_ORIG_D24[i], Y_ORIG_D24[i], label = 'nscan = %s' % scans[i], lw = 0.5, color = colours[i + 1])
+        custom_lines.append(Line2D([0], [0], color=colours[i+1], linestyle='-'))
+        legend_labels.append('ns = %s' % scans[i])
+
+    my_axs = [ax_top, ax_bottom]
+    for ax_itr in my_axs:
+        llim, ulim = ax_top.get_ylim()
+        ax_itr.fill_betweenx([llim, ulim], citric_acid_bounds[0], citric_acid_bounds[1], color= citrate_colour, alpha=fill_alpha)
+        ax_itr.fill_betweenx([llim, ulim], lactic_acid_bounds[0], lactic_acid_bounds[1], color= lactate_colour, alpha=fill_alpha)
+        ax_itr.fill_betweenx([llim, ulim], glucose_bounds[0], glucose_bounds[1], color=glucose_colour, alpha=fill_alpha)
+        ax_itr.fill_betweenx([llim, ulim], noise_bounds[0], noise_bounds[1], color= noise_colour, alpha=fill_alpha)
+        ax_itr.axvline(-0.05, color='lightgray', linewidth=0.5, alpha=0.5)    
+        ax_itr.axvline(0.05, color='lightgray', linewidth=0.5, alpha=0.5)    
+        XLIM = [0.9, 4.51]
+        YLIM = [-3 * 1e8, 1.65 *1e9]
+
+        ax_itr.set_xlim(XLIM)
+        #ax_top.set_ylim([-0.5 * 1e8, 1.6 *1e9])
+        ax_itr.set_ylabel('$I(\delta)$')
+        ax_itr.set_xlabel('$\delta$ [ppm]')
+        ax_itr.invert_xaxis()
+        #ax_top.legend(custom_lines, legend_labels, frameon = False, fontsize = 8, ncol = 3, loc = 7)
+
+        #ax_bottom = axs[1]
+
+
+
+        glc_5_label = '\\textbf{Glucose}\n \\textbf{5mM}'
+        glc_10_label = '\\textbf{Glucose}\n \\textbf{10mM}'
+        cit_label = '\\textbf{Citrate}\n \\textbf{0.2mM}'
+        lac_label = '\\textbf{Lactate}\n \\textbf{2mM}'
+        tsp_label = '\\textbf{TSP}\n \\textbf{XmM}'
+        noise_label = '\\textbf{Noise}'
+
+        x_pos_lac = sum(lactic_acid_bounds)/2.
+        x_pos_cit = sum(citric_acid_bounds)/2.
+        x_pos_glc = sum(glucose_bounds)/2.
+        x_pos_sim = (np.nanmin(citric_acid_bounds) + np.nanmax(lactic_acid_bounds))/2.
+        y_pos = 1.41*1e9
+        ax_itr.annotate(lac_label, xy=(x_pos_lac, y_pos), xytext=(x_pos_lac, y_pos), horizontalalignment='center', color = lactate_colour)
+        ax_top.annotate(glc_5_label, xy=(x_pos_glc + 0.05, y_pos), xytext=(x_pos_glc + 0.05, y_pos), horizontalalignment='center', color = glucose_colour)
+        ax_bottom.annotate(glc_10_label, xy=(x_pos_glc + 0.05, y_pos), xytext=(x_pos_glc + 0.05, y_pos), horizontalalignment='center', color = glucose_colour)
+        ax_itr.annotate(cit_label, xy=(x_pos_cit, y_pos), xytext=(x_pos_cit, y_pos), horizontalalignment='center', color = citrate_colour)
+        ax_itr.set_ylim(YLIM)
+
+    import matplotlib.colorbar as colorbar
+    import matplotlib.colors as clr
+
+    cb_colors = []
+    xtick_labs = []
+
+    for i in range(0, len(scans)):
+        cb_colors.append(colours[i + 1])
+        xtick_labs.append("%s" % scans[i])
+
+    num_colors = len(cb_colors)
+    cmap_ = clr.ListedColormap(cb_colors)
+
+    top_pos = ax_top.get_position()
+    bottom_pos = ax_bottom.get_position()
+    
+    #ylims = ax_bottom.get_ylim()
+    
+    # Calculate the position for the colorbar
+    colorbar_left = 0.92
+    colorbar_bottom = bottom_pos.y0
+    colorbar_width = 0.02
+    colorbar_height = top_pos.y1 - bottom_pos.y0
+    colorbar_rect = [colorbar_left, colorbar_bottom, colorbar_width, colorbar_height]
+
+
+    for ax in my_axs:
+        ax.tick_params(axis='x', direction='in', which='both')
+        ax.tick_params(axis='y', direction='in', which='both')
+
+    #ax_top.set_xlabel()
+
+    ax = fig.add_axes(colorbar_rect)
+
+    cb = colorbar.ColorbarBase(ax, orientation='vertical',
+                            cmap=cmap_, norm=plt.Normalize(-0.5, num_colors - 0.5))
+
+    #print(range(num_colors))
+    #print(xtick_labs)
+
+    cb.set_ticks(range(num_colors))
+    cb.ax.set_yticklabels(xtick_labs)
+    cb.set_label('$n_{\mathrm{s}}$', fontsize = 13)
+    
+    plt.subplots_adjust(hspace = 0.3)
+    
+    #fig.tight_layout()
+
+    # Show plot
+    #plt.show()
+    plt.savefig('/Users/alexhill/Documents/GitHub/NMR_Analysis/Figs_For_Gil/d22_d24_ws_%s.pdf' % (water_sub), bbox_inches = 'tight', pad_inches = 0.05)
+    plt.close()
+    
+    
+
+
+def compare_conc_and_snr():
+    scans = [1, 2, 4, 8, 16, 32, 64, 128, 256]
+    #sample = 'D24'
+    #snr_choice = 'int'
+    sample = 'D24'
+    water_sub = False
+    import matplotlib as mpl
+    cmap = mpl.colormaps['BrBG']
+    colours = cmap(np.linspace(0, 1, len(scans) + 2))
+
+    def _get_xysnr(sample = 'D23', water_sub = True, snr_choice = 'brk'):
+        X_ORIG = []
+        Y_ORIG = []
+        SNR_ORIG = []
+        SIGNAL_ORIG = []
+        NOISE_ORIG = []
+
+        for scan in scans:
+            print(scan)
+            S = LoadSpectra()
+            S.ReadTextFile(nscan = scan, sample =sample)
+            x = S.initial_ppm
+            y = S.initial_amplitude
+            if water_sub:
+                S.SubtractWater()
+                x = S.water_sub_ppm
+                y = S.water_sub_amplitude
+
+            X_ORIG.append(x)
+            Y_ORIG.append(y)
+
+            A = AnalyseSpectra()
+            A.InputData(x = x, y = y)
+            
+            A.SignalToNoise(signal_bounds = citric_acid_bounds, snr_choice = snr_choice)
+            citric_acid_snr = A.snr
+            citric_acid_signal = A.spectra_signal
+            citric_acid_noise = A.spectra_noise
+
+
+            A.SignalToNoise(signal_bounds = lactic_acid_bounds, snr_choice = snr_choice)
+            lactic_acid_snr = A.snr
+            lactic_acid_signal = A.spectra_signal
+            lactic_acid_noise = A.spectra_noise
+
+
+            A.SignalToNoise(signal_bounds = glucose_bounds, snr_choice = snr_choice)
+            glucose_snr = A.snr
+            glucose_signal = A.spectra_signal
+            glucose_noise = A.spectra_noise
+
+            snrs = [citric_acid_snr, lactic_acid_snr, glucose_snr]
+            sigs = [citric_acid_signal, lactic_acid_signal, glucose_signal]
+            noises = [citric_acid_noise, lactic_acid_noise, glucose_noise]
+            
+            SNR_ORIG.append(snrs)
+            SIGNAL_ORIG.append(sigs)
+            NOISE_ORIG.append(noises)
+
+        snrs_orig = np.array(SNR_ORIG)
+        signals_orig = np.array(SIGNAL_ORIG)
+        noises_orig = np.array(NOISE_ORIG)
+
+        return X_ORIG, Y_ORIG, snrs_orig, signals_orig, noises_orig
+
+    X_ORIG_D22, Y_ORIG_D22, snrs_orig_D22_brk, sigs_orig_D22_brk, noises_orig_D22_brk = _get_xysnr(sample = 'D22', water_sub = water_sub, snr_choice = 'brk')
+    X_ORIG_D24, Y_ORIG_D24, snrs_orig_D24_brk, sigs_orig_D24_brk, noises_orig_D24_brk = _get_xysnr(sample = 'D24', water_sub = water_sub, snr_choice = 'brk')
+
+    X_ORIG_D22, Y_ORIG_D22, snrs_orig_D22_int, sigs_orig_D22_int, noises_orig_D22_int = _get_xysnr(sample = 'D22', water_sub = water_sub, snr_choice = 'int')
+    X_ORIG_D24, Y_ORIG_D24, snrs_orig_D24_int, sigs_orig_D24_int, noises_orig_D24_int = _get_xysnr(sample = 'D24', water_sub = water_sub, snr_choice = 'int')
+
+    glucose_colour = 'orange'
+    citrate_colour = 'green'
+    lactate_colour = 'blue'
+    noise_colour   = 'black'
+    fill_alpha         = 0.07
+
+    custom_lines = []
+    legend_labels = []
+
+    # Enable LaTeX rendering
+    matplotlib.rc('text', usetex=True)
+
+    # Set the default font to Times New Roman
+    matplotlib.rcParams['font.family'] = 'serif'
+    matplotlib.rcParams['font.size'] = 12
+
+    citrate_comp_brk = snrs_orig_D24_brk[:,0]/snrs_orig_D22_brk[:,0]
+    lactate_comp_brk = snrs_orig_D24_brk[:,1]/snrs_orig_D22_brk[:,1]
+    glucose_comp_brk = snrs_orig_D24_brk[:,2]/snrs_orig_D22_brk[:,2]
+
+    citrate_comp_int = snrs_orig_D24_int[:,0]/snrs_orig_D22_int[:,0]
+    lactate_comp_int = snrs_orig_D24_int[:,1]/snrs_orig_D22_int[:,1]
+    glucose_comp_int = snrs_orig_D24_int[:,2]/snrs_orig_D22_int[:,2]
+
+
+
+    citrate_sig_comp_brk = sigs_orig_D24_brk[:,0]/sigs_orig_D22_brk[:,0]
+    lactate_sig_comp_brk = sigs_orig_D24_brk[:,1]/sigs_orig_D22_brk[:,1]
+    glucose_sig_comp_brk = sigs_orig_D24_brk[:,2]/sigs_orig_D22_brk[:,2]
+
+    citrate_sig_comp_int = sigs_orig_D24_int[:,0]/sigs_orig_D22_int[:,0]
+    lactate_sig_comp_int = sigs_orig_D24_int[:,1]/sigs_orig_D22_int[:,1]
+    glucose_sig_comp_int = sigs_orig_D24_int[:,2]/sigs_orig_D22_int[:,2]
+
+    citrate_noise_comp_brk = noises_orig_D24_brk[:,0]/noises_orig_D22_brk[:,0]
+    lactate_noise_comp_brk = noises_orig_D24_brk[:,1]/noises_orig_D22_brk[:,1]
+    glucose_noise_comp_brk = noises_orig_D24_brk[:,2]/noises_orig_D22_brk[:,2]
+
+    citrate_noise_comp_int = noises_orig_D24_int[:,0]/noises_orig_D22_int[:,0]
+    lactate_noise_comp_int = noises_orig_D24_int[:,1]/noises_orig_D22_int[:,1]
+    glucose_noise_comp_int = noises_orig_D24_int[:,2]/noises_orig_D22_int[:,2]
+
+
+    snr_lab_brk = '$\mathrm{SNR}_{\mathrm{Brk.}}$'
+    snr_lab_int = '$\mathrm{SNR}_{\mathrm{Int.}}$'
+
+    fig, axs = plt.subplots(1,3, figsize = [12, 4])
+    axs[0].scatter(scans, citrate_sig_comp_brk, color = citrate_colour, marker = 's', edgecolor = 'k', label = 'Citrate', s = 50)
+    axs[0].scatter(scans, lactate_sig_comp_brk, color = lactate_colour, marker = 's', edgecolor = 'k', label = 'Lactate', s = 50)
+    axs[0].scatter(scans, glucose_sig_comp_brk, color = glucose_colour, marker = 's', edgecolor = 'k', label = 'Glucose', s = 50)
+    axs[0].set_xscale('log')
+    axs[0].set_xlabel('Number of Scans ($n_{s}$)')
+    axs[0].set_ylabel('Signal Brk Ratio: D24/D22')
+
+    axs[1].scatter(scans, citrate_sig_comp_int, color = citrate_colour, marker = 's', edgecolor = 'k', label = 'Citrate', s = 50)
+    axs[1].scatter(scans, lactate_sig_comp_int, color = lactate_colour, marker = 's', edgecolor = 'k', label = 'Lactate', s = 50)
+    axs[1].scatter(scans, glucose_sig_comp_int, color = glucose_colour, marker = 's', edgecolor = 'k', label = 'Glucose', s = 50)
+    axs[1].set_xscale('log')
+    axs[1].set_xlabel('Number of Scans ($n_{s}$)')
+    axs[1].set_ylabel('Signal Int Ratio: D24/D22')
+    axs[1].legend(frameon = True)
+
+    axs[2].scatter(scans, glucose_noise_comp_int, color = 'magenta', marker = 's', edgecolor = 'k', label = 'Integrated Method', s = 50)
+    axs[2].scatter(scans, citrate_noise_comp_brk, color = 'magenta', marker = 'x', label = 'Bruker Method', s = 50)
+    axs[2].set_xscale('log')
+    axs[2].set_xlabel('Number of Scans ($n_{s}$)')
+    axs[2].set_ylabel('Noise Ratio: D24/D22')
+    axs[2].legend(frameon = True)
+
+
+    axs[0].set_ylim([0.5, 3.0])
+    axs[1].set_ylim([0.5, 3.0])
+    axs[2].set_ylim([0.5, 3.0])
+
+    plt.savefig('/Users/alexhill/Documents/GitHub/NMR_Analysis/Figs_For_Gil/sig_noise_comp_snr.pdf')
+
+    plt.close()
+
+    fig, axs = plt.subplots(1,3, figsize = [12, 4])
+
+    axs[0].scatter(scans, sigs_orig_D22_brk[:,0], color = citrate_colour, marker = 's', edgecolor = 'k', label = 'Cit D22', s = 50)
+    axs[0].scatter(scans, sigs_orig_D22_brk[:,1], color = lactate_colour, marker = 's', edgecolor = 'k', label = 'Lac D22', s = 50)
+    axs[0].scatter(scans, sigs_orig_D22_brk[:,2], color = glucose_colour, marker = 's', edgecolor = 'k', label = 'Glc D22', s = 50)
+    axs[0].scatter(scans, sigs_orig_D24_brk[:,0], color = citrate_colour, marker = 'x', label = 'Cit D24', s = 50)
+    axs[0].scatter(scans, sigs_orig_D24_brk[:,1], color = lactate_colour, marker = 'x', label = 'Lac D24', s = 50)
+    axs[0].scatter(scans, sigs_orig_D24_brk[:,2], color = glucose_colour, marker = 'x', label = 'Glc D24', s = 50)
+    axs[0].set_yscale('log')
+    axs[0].set_xscale('log')
+    axs[0].set_xlabel('Number of Scans ($n_{s}$)')
+    axs[0].set_ylabel('Signal Brk')
+    axs[0].legend(frameon = True)
+
+    axs[1].scatter(scans, sigs_orig_D22_int[:,0], color = citrate_colour, marker = 's', edgecolor = 'k', label = 'Cit D22', s = 50)
+    axs[1].scatter(scans, sigs_orig_D22_int[:,1], color = lactate_colour, marker = 's', edgecolor = 'k', label = 'Lac D22', s = 50)
+    axs[1].scatter(scans, sigs_orig_D22_int[:,2], color = glucose_colour, marker = 's', edgecolor = 'k', label = 'Glc D22', s = 50)
+    axs[1].scatter(scans, sigs_orig_D24_int[:,0], color = citrate_colour, marker = 'x', label = 'Cit D24', s = 50)
+    axs[1].scatter(scans, sigs_orig_D24_int[:,1], color = lactate_colour, marker = 'x', label = 'Lac D24', s = 50)
+    axs[1].scatter(scans, sigs_orig_D24_int[:,2], color = glucose_colour, marker = 'x', label = 'Glc D24', s = 50)
+    axs[1].set_yscale('log')
+    axs[1].set_xscale('log')
+    axs[1].set_xlabel('Number of Scans ($n_{s}$)')
+    axs[1].set_ylabel('Signal Int')
+
+    axs[2].scatter(scans, noises_orig_D22_int[:,0], color = 'k', marker = 's', label = 'D22 int', s = 50)
+    axs[2].scatter(scans, noises_orig_D22_brk[:,0], color = 'r', marker = 's', label = 'D22 brk', s = 50)
+    axs[2].scatter(scans, noises_orig_D24_brk[:,0], color = 'r', marker = 'x', label = 'D24 brk', s = 50)
+    axs[2].scatter(scans, noises_orig_D24_int[:,0], color = 'k', marker = 'x', label = 'D24 int', s = 50)
+    axs[2].set_xscale('log')
+    axs[2].set_yscale('log')
+    axs[2].set_xlabel('Number of Scans ($n_{s}$)')
+    axs[2].set_ylabel('Noise')
+    axs[2].legend(frameon = True)
+
+
+    plt.savefig('/Users/alexhill/Documents/GitHub/NMR_Analysis/Figs_For_Gil/sig_noise_comp_raw.pdf')
+    plt.close()
+
+    fig, axs = plt.subplots(1,2, figsize = [12, 5])
+    axs[0].scatter(scans, citrate_comp_brk, color = citrate_colour, marker = 's', edgecolor = 'k', label = 'Citrate', s = 50)
+    axs[0].scatter(scans, lactate_comp_brk, color = lactate_colour, marker = 's', edgecolor = 'k', label = 'Lactate', s = 50)
+    axs[0].scatter(scans, glucose_comp_brk, color = glucose_colour, marker = 's', edgecolor = 'k', label = 'Glucose', s = 50)
+    axs[0].set_xscale('log')
+    axs[0].set_xlabel('Number of Scans ($n_{s}$)')
+    axs[0].set_ylabel('%s Ratio: D24/D22' % snr_lab_brk)
+
+    axs[1].scatter(scans, citrate_comp_int, color = citrate_colour, marker = 's', edgecolor = 'k', label = 'Citrate', s = 50)
+    axs[1].scatter(scans, lactate_comp_int, color = lactate_colour, marker = 's', edgecolor = 'k', label = 'Lactate', s = 50)
+    axs[1].scatter(scans, glucose_comp_int, color = glucose_colour, marker = 's', edgecolor = 'k', label = 'Glucose', s = 50)
+    axs[1].set_xscale('log')
+    axs[1].set_xlabel('Number of Scans ($n_{s}$)')
+    axs[1].set_ylabel('%s Ratio: D24/D22' % snr_lab_int)
+    axs[1].legend(frameon = True)
+
+    axs[0].set_ylim([0.5, 3.0])
+    axs[1].set_ylim([0.5, 3.0])
+
+    plt.savefig('/Users/alexhill/Documents/GitHub/NMR_Analysis/Figs_For_Gil/snr_comp_snr.pdf')
+    plt.close()
+
+def water_fit():
+    scans = [1, 2, 4, 8, 16, 32, 64, 128, 256]
+    import matplotlib as mpl
+    cmap = mpl.colormaps['BrBG']
+    colours = cmap(np.linspace(0, 1, len(scans) + 2))
+
+    X_ORIG, Y_ORIG = [], []
+    X_WATER, Y_WATER = [], []
+    for scan in scans:
+        S = LoadSpectra()
+        S.ReadTextFile(nscan = scan, sample = 'D24')
+        x = S.initial_ppm
+        y = S.initial_amplitude
+        S.SubtractWater()
+        xw = S.water_sub_ppm
+        yw = S.water_sub_amplitude
+        X_ORIG.append(x)
+        Y_ORIG.append(y)
+        X_WATER.append(xw)
+        Y_WATER.append(yw)
+
+    L = LoadSimulatedSpectra()
+    
+    L.LoadSimSpec(metabolite = 'Glucose')
+    L.ScaleSpectra(bounds = glucose_bounds,
+                    yscaling = 1)
+    xdata_glc, ydata_glc = L.processed_ppm, L.processed_amplitude
+
+    # Enable LaTeX rendering
+    matplotlib.rc('text', usetex=True)
+
+    # Set the default font to Times New Roman
+    matplotlib.rcParams['font.family'] = 'serif'
+    matplotlib.rcParams['font.size'] = 12
+
+    # Create figure and gridspecs
+    fig, axs = plt.subplots(3,1, figsize=(10,8))
+
+    # Top panel spanning two columns
+    ax_top = axs[0]
+    ax_mid = axs[1]
+    ax_bottom = axs[2]
+    custom_lines = []
+    legend_labels = []
+    for i in range(0, len(scans)):
+        ax_top.plot(X_ORIG[i], Y_ORIG[i], label = 'nscan = %s' % scans[i], lw = 0.5, color = colours[i + 1])
+        ax_mid.plot(X_WATER[i], Y_WATER[i], label = 'nscan = %s' % scans[i], lw = 0.5, color = colours[i + 1])
+        custom_lines.append(Line2D([0], [0], color=colours[i+1], linestyle='-'))
+        legend_labels.append('ns = %s' % scans[i])
+    
+    ax_bottom.plot(xdata_glc, ydata_glc, color = 'magenta', lw = 1.1, ls = '-')
+    
+    XLIM = [3, 5.5]
+    YLIM = [-3 * 1e8, 5 *1e9]
+    YLIM2 = [-3.9 * 1e9, 3 *1e9]
+
+    ax_top.set_xlim(XLIM)
+    ax_mid.set_xlim(XLIM)
+    ax_bottom.set_xlim(XLIM)
+    ax_top.set_ylim(YLIM)
+    ax_mid.set_ylim(YLIM2)
+    ax_top.invert_xaxis()
+    ax_mid.invert_xaxis()
+    ax_bottom.invert_xaxis()
+
+    ax_top.set_xticklabels([])
+    ax_mid.set_xticklabels([])
+    ax_bottom.set_yticklabels([])
+
+    my_axs = [ax_top, ax_mid, ax_bottom]
+    for ax in my_axs:
+        ax.tick_params(axis='x', direction='in', which='both', bottom = True, top= True, left= True, right= True)
+        ax.tick_params(axis='y', direction='in', which='both', bottom = True, top= True, left= True, right= True)
+        ax.set_ylabel('$I(\delta)$')
+
+
+    custom_line = [Line2D([0], [0], color='w', linestyle='-', alpha = 0)]
+
+    raw_lab = '\\textbf{Raw Spectrum: 10mM Glucose + 99.9\% D2O}'
+    ws_lab = '\\textbf{Residual: (Raw) - (Best fit to water peak)}'
+    sim_lab = '\\textbf{Simulated Glucose Spectrum}'
+    
+    ax_top.legend(custom_line, [raw_lab], frameon = False, loc = 'upper right', fontsize = 11)
+    ax_mid.legend(custom_line, [ws_lab], frameon = False, loc = 'upper right', fontsize = 11)
+    ax_bottom.legend(custom_line, [sim_lab], frameon = False, loc = 'upper right', fontsize = 11)
+
+    import matplotlib.colorbar as colorbar
+    import matplotlib.colors as clr
+
+    cb_colors = []
+    xtick_labs = []
+
+    for i in range(0, len(scans)):
+        cb_colors.append(colours[i + 1])
+        xtick_labs.append("%s" % scans[i])
+
+    num_colors = len(cb_colors)
+    cmap_ = clr.ListedColormap(cb_colors)
+
+    top_pos = ax_top.get_position()
+    bottom_pos = ax_mid.get_position()
+    
+    #ylims = ax_bottom.get_ylim()
+    
+    # Calculate the position for the colorbar
+    colorbar_left = 0.92
+    colorbar_bottom = bottom_pos.y0
+    colorbar_width = 0.02
+    colorbar_height = top_pos.y1 - bottom_pos.y0
+    colorbar_rect = [colorbar_left, colorbar_bottom, colorbar_width, colorbar_height]
+
+    ax = fig.add_axes(colorbar_rect)
+
+    cb = colorbar.ColorbarBase(ax, orientation='vertical',
+                            cmap=cmap_, norm=plt.Normalize(-0.5, num_colors - 0.5))
+
+    #print(range(num_colors))
+    #print(xtick_labs)
+
+    cb.set_ticks(range(num_colors))
+    cb.ax.set_yticklabels(xtick_labs)
+    cb.set_label('$n_{\mathrm{s}}$', fontsize = 13)
+
+
+
+    plt.subplots_adjust(hspace = 0.1)
+
+    ax_bottom.set_xlabel('$\delta$ [ppm]')
+    #plt.show()
+    plt.savefig('/Users/alexhill/Documents/GitHub/NMR_Analysis/Figs_For_Gil/water_sub.pdf', bbox_inches = 'tight', pad_inches = 0.05)
+    plt.close()
+
+compare_conc_and_snr()
+#water_fit()
 #big_plot()
 
-
+'''
+L = LoadSimulatedSpectra()
+L.LoadSimSpec(metabolite = 'Glucose')
+xdata_glc, ydata_glc = L.ppm, L.amplitude
+L.LoadSimSpec(metabolite = 'Lactate')
+xdata_lac, ydata_lac = L.ppm, L.amplitude
+L.LoadSimSpec(metabolite = 'Citrate')
+xdata_cit, ydata_cit = L.ppm, L.amplitude
+'''

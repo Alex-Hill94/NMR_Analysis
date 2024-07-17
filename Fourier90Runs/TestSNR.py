@@ -248,13 +248,24 @@ if __name__ == '__main__':
 
     scans = [1, 2, 4, 8, 16, 32, 64, 128, 256]
 
-    lactic_acid_bounds = [1.2, 1.45]
-    glucose_bounds     = [3.0, 4.2]
-    citric_acid_bounds = [2.5, 2.7]
+    citric_acid_bounds = [2.37, 2.82]
+    lactic_acid_bounds = [1.17, 1.50]
+    glucose_bounds     = [3.19, 3.98]
     noise_bounds       = [-2.0, -1.0]
+    glucose_colour = 'orange'
+    citrate_colour = 'green'
+    lactate_colour = 'blue'
+    noise_colour   = 'black'
+
+    #ax_bottom_right.fill_between([x_min, x_max], 0, 3, color= 'lightsalmon', alpha=0.2)
+    #ax_bottom_right.fill_between([x_min, x_max], 3, 10, color= 'navajowhite', alpha=0.2)
+    #ax_bottom_right.fill_between([x_min, x_max], 10, y_max*10, color= 'lightgreen', alpha=0.2)
+    #ax_bottom_right.set_ylim([0.9, y_max*1.2])
+    #ax_bottom_right.set_yscale('log')
 
     bounds = [lactic_acid_bounds, glucose_bounds, citric_acid_bounds]
     bound_lab = ['lac', 'glc', 'cit']
+    master_snrs = []
     for i in range(0, len(bounds)):
         SNRs = []
         bound = bounds[i]
@@ -265,44 +276,222 @@ if __name__ == '__main__':
                         sample = 'D24',
                         pulse = 'zg30')
             #S.SubtractWater()
-            x = S.initial_ppm
-            y = S.initial_amplitude
 
+            A = AnalyseSpectra()
+            A.InputData(x = S.initial_ppm, y = S.initial_amplitude)
+            A.SignalToNoise(signal_bounds = bound, noise_bounds = noise_bounds, snr_choice = 'liv')
+            snr_liv = A.snr
+            A.SignalToNoise(signal_bounds = bound, noise_bounds = noise_bounds, snr_choice = 'agi')
+            snr_agi = A.snr
+            A.SignalToNoise(signal_bounds = bound, noise_bounds = noise_bounds, snr_choice = 'brk')
+            snr_brk = A.snr
 
-            snr_agi, sig_agi, ppm_loc_agi = snr_agilent(x, y, noise_bounds, bound)
-            snr_liv, sig_liv, noise_liv = snr_liverpool(x, y, noise_bounds, bound)
-            snr_brk, sig_brk, noise_brk = snr_bruker(x, y, noise_bounds, bound)
+            #snr_agi, sig_agi, ppm_loc_agi = snr_agilent(x, y, noise_bounds, bound)
+            #snr_liv, sig_liv, noise_liv = snr_liverpool(x, y, noise_bounds, bound)
+            #snr_brk, sig_brk, noise_brk = snr_bruker(x, y, noise_bounds, bound)
 
             snr_array = [snr_agi, snr_liv, snr_brk]
 
             SNRs.append(snr_array)
+        #SNRs = np.array(SNRs)
+        master_snrs.append(SNRs)
+    master_snrs = np.array(master_snrs)
+    # Enable LaTeX rendering
+    matplotlib.rc('text', usetex=True)
 
-        SNRs = np.array(SNRs)
+    # Set the default font to Times New Roman
+    matplotlib.rcParams['font.family'] = 'serif'
+    matplotlib.rcParams['font.size'] = 15
+    fig, axs = plt.subplots(1,3, figsize = [14, 5])
 
-        SNR_AGI = SNRs[:,0]
-        SNR_LIV = SNRs[:,1]
-        SNR_BRK = SNRs[:,2]
+    lw = 1
+    alps = 0.5
+    S = 70
 
-        fig, ax = plt.subplots(1,1, figsize = [10, 5])
-        ax.set_title('%s'  % bound_lab[i])
-        ax.plot(scans, np.ones(len(scans)) * 3., color = 'k', alpha = 0.5, ls = '--')
-        ax.plot(scans, SNR_AGI, color = 'orange', label = 'SNR Agilent')
-        ax.plot(scans, SNR_LIV, color = 'blue', label = 'SNR Liverpool')
-        ax.plot(scans, SNR_BRK, color = 'green', label = 'SNR Bruker')
-        ax.set_ylabel('SNR')
-        ax.set_xlabel('N Scan')
-        ax.legend()
+    agi_mrk = 'd'  
+    liv_mrk = 'P'  
+    brk_mrk = 's'
+
+    agi_ls = '-'  
+    liv_ls = '--'  
+    brk_ls = ':'
+
+    #~~~~~~~~~~~~~~~~~~
+    axs[0].plot(scans, master_snrs[1][:,0], color = glucose_colour, ls = agi_ls, label = 'Glucose', lw = lw, alpha = alps)
+    axs[0].scatter(scans, master_snrs[1][:,0], color = glucose_colour, marker = agi_mrk, edgecolor = 'k', label = 'Glucose', s = S)
+
+    axs[0].plot(scans, master_snrs[1][:,1], color = glucose_colour, ls = liv_ls, label = 'Glucose', lw = lw, alpha = alps)
+    axs[0].scatter(scans, master_snrs[1][:,1], color = glucose_colour, marker = liv_mrk, edgecolor = 'k', label = 'Glucose', s = S)
+
+    axs[0].plot(scans, master_snrs[1][:,2], color = glucose_colour, ls = brk_ls, label = 'Glucose', lw = lw, alpha = alps)
+    axs[0].scatter(scans, master_snrs[1][:,2], color = glucose_colour, marker = brk_mrk, edgecolor = 'k', label = 'Glucose', s = S)
+
+    #~~~~~~~~~~~~~~~~~~
+    axs[1].plot(scans, master_snrs[0][:,0], color = lactate_colour, ls = agi_ls, label = 'Lactate', lw = lw, alpha = alps)
+    axs[1].scatter(scans, master_snrs[0][:,0], color = lactate_colour, marker = agi_mrk, edgecolor = 'k', label = 'Lactate', s = S)
+    
+    axs[1].plot(scans, master_snrs[0][:,1], color = lactate_colour, ls = liv_ls, label = 'Lactate', lw = lw, alpha = alps)
+    axs[1].scatter(scans, master_snrs[0][:,1], color = lactate_colour, marker = liv_mrk, edgecolor = 'k', label = 'Lactate', s = S)
+    
+    axs[1].plot(scans, master_snrs[0][:,2], color = lactate_colour, ls = brk_ls, label = 'Lactate', lw = lw, alpha = alps)
+    axs[1].scatter(scans, master_snrs[0][:,2], color = lactate_colour, marker = brk_mrk, edgecolor = 'k', label = 'Lactate', s = S)
+
+    #~~~~~~~~~~~~~~~~~~
+    axs[2].plot(scans, master_snrs[2][:,0], color = citrate_colour, ls = agi_ls, label = 'Citrate', lw = lw, alpha = alps)
+    axs[2].scatter(scans, master_snrs[2][:,0], color = citrate_colour, marker = agi_mrk, edgecolor = 'k', label = 'Citrate', s = S)
+
+    axs[2].plot(scans, master_snrs[2][:,1], color = citrate_colour, ls = liv_ls, label = 'Citrate', lw = lw, alpha = alps)
+    axs[2].scatter(scans, master_snrs[2][:,1], color = citrate_colour, marker = liv_mrk, edgecolor = 'k', label = 'Citrate', s = S)
+
+    axs[2].plot(scans, master_snrs[2][:,2], color = citrate_colour, ls = brk_ls, label = 'Citrate', lw = lw, alpha = alps)
+    axs[2].scatter(scans, master_snrs[2][:,2], color = citrate_colour, marker = brk_mrk, edgecolor = 'k', label = 'Citrate', s = S)
+
+    #~~~~~~~~~~~~~~~~~~
+    x_min, x_max = axs[0].get_xlim()
+    y_min, y_max = axs[0].get_ylim()
+    
+    my_axs = [axs[0], axs[1], axs[2]]
+    labels = ['Glucose', 'Lactate', 'Citrate']
+    labels_2 = ['$\mathrm{SNR} < \mathrm{LOD}$', '$\mathrm{LOD} < \mathrm{SNR} < \mathrm{LOQ}$', '$\mathrm{SNR} > \mathrm{LOQ}$']
+    for i in range(0, len(my_axs)):
+        ax = my_axs[i]
+        ax.fill_between([x_min, x_max*10], 0, 3, color= 'lightsalmon', alpha=0.2)
+        ax.fill_between([x_min, x_max*10], 3, 10, color= 'navajowhite', alpha=0.2)
+        ax.fill_between([x_min, x_max*10], 10, y_max*10, color= 'lightgreen', alpha=0.2)
+        ax.set_ylim([0.7, y_max*1.5])
+        ax.set_xlim([0.7, x_max*1.5])
+        #x_min, x_max = ax.get_xlim()
+        #y_min, y_max = ax.get_ylim()
+        #x_ann = x_min + 0.001 * (x_max - x_min)
+        #y_ann = y_max - 0.5* (y_max - y_min)
+        ax.text(1, 200, labels[i], bbox=dict(facecolor='white', edgecolor='black', boxstyle='round'), fontsize=13)
+        
         ax.set_yscale('log')
-        ax.set_ylim([1, 205])
-        plt.show()
-        #plt.savefig('Paper_Figs/snr_measure_noesy_%s.png' % bound_lab[i])
-        #plt.close()
+        ax.set_xscale('log')
+        ax.tick_params(axis='x', direction='in', which='both', right =True, top = True)
+        ax.tick_params(axis='y', direction='in', which='both', right =True, top = True)
 
+    axs[0].text(95, 2.2, labels_2[0], fontsize = 10, color = 'red')
+    axs[0].text(40, 5.0, labels_2[1], fontsize = 10, color = 'orange')
+    axs[0].text(95, 11.7, labels_2[2], fontsize = 10, color = 'green')
+
+    for ax in my_axs[1:]:
+        ax.set_yticklabels([])
+    
+    axs[0].set_ylabel('SNR')
+    axs[1].set_xlabel('$n_{\mathrm{s}}$')
+
+    custom_lines = [Line2D([0], [0], color='k', marker=agi_mrk, linestyle = agi_ls, markersize = 8, linewidth = 1),
+                    Line2D([0], [0], color='k', marker=brk_mrk, linestyle = brk_ls, markersize = 8, linewidth = 1),
+                    Line2D([0], [0], color='k', marker=liv_mrk, linestyle = liv_ls, markersize = 8, linewidth = 1)]
+    
+    axs[2].legend(custom_lines, ['$\mathrm{SNR}_{\mathrm{Agi.}}$', '$\mathrm{SNR}_{\mathrm{Brk.}}$', '$\mathrm{SNR}_{\mathrm{Int.}}$'], frameon = False)
+
+    plt.subplots_adjust(wspace = 0.0)
+
+    fname = 'Paper_Figs/snr_testing.pdf'
+    plt.savefig(fname, bbox_inches = 'tight', pad_inches = 0.05)
+    plt.close()
+
+
+
+    fig, axs = plt.subplots(1,1, figsize = [6, 6])
+
+    lw = 1
+    alps = 0.5
+    S = 100
+
+    agi_mrk = 'd'  
+    liv_mrk = 'P'  
+    brk_mrk = 's'
+
+    agi_ls = '-'  
+    liv_ls = '--'  
+    brk_ls = ':'
+
+    #~~~~~~~~~~~~~~~~~~
+    axs.plot(scans, master_snrs[1][:,0], color = glucose_colour, ls = agi_ls, label = 'Glucose', lw = lw, alpha = alps)
+    axs.scatter(scans, master_snrs[1][:,0], color = glucose_colour, marker = agi_mrk, edgecolor = 'k', label = 'Glucose', s = S)
+
+    axs.plot(scans, master_snrs[1][:,1], color = glucose_colour, ls = liv_ls, label = 'Glucose', lw = lw, alpha = alps)
+    axs.scatter(scans, master_snrs[1][:,1], color = glucose_colour, marker = liv_mrk, edgecolor = 'k', label = 'Glucose', s = S)
+
+    axs.plot(scans, master_snrs[1][:,2], color = glucose_colour, ls = brk_ls, label = 'Glucose', lw = lw, alpha = alps)
+    axs.scatter(scans, master_snrs[1][:,2], color = glucose_colour, marker = brk_mrk, edgecolor = 'k', label = 'Glucose', s = S)
+
+    x_min, x_max = axs.get_xlim()
+    y_min, y_max = axs.get_ylim()
+    
+    labels = ['Glucose', 'Lactate', 'Citrate']
+    labels_2 = ['$\mathrm{SNR} < \mathrm{LOD}$', '$\mathrm{LOD} < \mathrm{SNR} < \mathrm{LOQ}$', '$\mathrm{SNR} > \mathrm{LOQ}$']
+    
+    ax = axs
+    ax.fill_between([x_min, x_max*10], 0, 3, color= 'lightsalmon', alpha=0.2)
+    ax.fill_between([x_min, x_max*10], 3, 10, color= 'navajowhite', alpha=0.2)
+    ax.fill_between([x_min, x_max*10], 10, y_max*10, color= 'lightgreen', alpha=0.2)
+    ax.set_ylim([0.7, y_max*1.5])
+    ax.set_xlim([0.7, x_max*1.5])
+    #x_min, x_max = ax.get_xlim()
+    #y_min, y_max = ax.get_ylim()
+    #x_ann = x_min + 0.001 * (x_max - x_min)
+    #y_ann = y_max - 0.5* (y_max - y_min)
+    #ax.text(1, 200, labels[i], bbox=dict(facecolor='white', edgecolor='black', boxstyle='round'), fontsize=13)
+    
+    ax.set_yscale('log')
+    ax.set_xscale('log')
+    ax.tick_params(axis='x', direction='in', which='both', right =True, top = True)
+    ax.tick_params(axis='y', direction='in', which='both', right =True, top = True)
+
+    axs.text(75, 2.2, labels_2[0], fontsize = 15, color = 'red')
+    axs.text(27, 5.0, labels_2[1], fontsize = 15, color = 'orange')
+    axs.text(75, 11.7, labels_2[2], fontsize = 15, color = 'green')
+
+    for ax in my_axs[1:]:
+        ax.set_yticklabels([])
+    
+    axs.set_ylabel('SNR')
+    axs.set_xlabel('$n_{\mathrm{s}}$')
+
+    custom_lines = [Line2D([0], [0], color='k', marker=agi_mrk, linestyle = agi_ls, markersize = 8, linewidth = 1),
+                    Line2D([0], [0], color='k', marker=brk_mrk, linestyle = brk_ls, markersize = 8, linewidth = 1),
+                    Line2D([0], [0], color='k', marker=liv_mrk, linestyle = liv_ls, markersize = 8, linewidth = 1)]
+    
+    axs.legend(custom_lines, ['$\mathrm{SNR}_{\mathrm{Agi.}}$', '$\mathrm{SNR}_{\mathrm{Brk.}}$', '$\mathrm{SNR}_{\mathrm{Int.}}$'], frameon = False)
+
+    plt.subplots_adjust(wspace = 0.0)
+
+    fname = 'Paper_Figs/snr_testing_one_pan.pdf'
+    plt.show()
+    #plt.savefig(fname, bbox_inches = 'tight', pad_inches = 0.05)
+    #plt.close()
+
+
+
+    '''
+    SNR_AGI = SNRs[:,0]
+    SNR_LIV = SNRs[:,1]
+    SNR_BRK = SNRs[:,2]
+
+    fig, ax = plt.subplots(1,1, figsize = [10, 5])
+    ax.set_title('%s'  % bound_lab[i])
+    ax.plot(scans, np.ones(len(scans)) * 3., color = 'k', alpha = 0.5, ls = '--')
+    ax.plot(scans, SNR_AGI, color = 'orange', label = 'SNR Agilent')
+    ax.plot(scans, SNR_LIV, color = 'blue', label = 'SNR Liverpool')
+    ax.plot(scans, SNR_BRK, color = 'green', label = 'SNR Bruker')
+    ax.set_ylabel('SNR')
+    ax.set_xlabel('N Scan')
+    ax.legend()
+    ax.set_yscale('log')
+    ax.set_ylim([1, 205])
+    plt.show()
+    #plt.savefig('Paper_Figs/snr_measure_noesy_%s.png' % bound_lab[i])
+    #plt.close()
+    '''
 
     #lactate_colour = 'blue'
     #noise_colour   = 'black'
     #fill_alpha         = 0.1
-#
+
     #fig, ax = plt.subplots(1,1, figsize = [10, 5])
     #ax.plot(x, y)
     #llim, ulim = ax.get_ylim()
