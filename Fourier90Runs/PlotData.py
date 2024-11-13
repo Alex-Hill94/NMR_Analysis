@@ -199,7 +199,6 @@ def big_plot():
 
 def just_spectra():
 
-
     fig, axs = plt.subplots(1,1, figsize = [12, 4])
     for i in range(0, len(scans)):
         axs.plot(X_ORIG[i], Y_ORIG[i], label = 'nscan = %s' % scans[i], lw = 0.5, color = colours[i + 1])
@@ -219,7 +218,6 @@ def just_spectra():
     plt.show()
 
 def scaled_vs_not_scaled():
-
 
     fig, axs = plt.subplots(2,2, figsize = [8, 8])
 
@@ -1490,7 +1488,6 @@ def single_panel():
     plt.savefig('/Users/alexhill/Documents/GitHub/NMR_Analysis/Figs_For_Gil/single_pan.pdf', bbox_inches = 'tight', pad_inches = 0.05)
     plt.close()
 
-
 def compare_concs():
     scans = [1, 2, 4, 8, 16, 32, 64, 128, 256]
     #sample = 'D24'
@@ -1665,9 +1662,6 @@ def compare_concs():
     plt.savefig('/Users/alexhill/Documents/GitHub/NMR_Analysis/Figs_For_Gil/d22_d24_ws_%s.pdf' % (water_sub), bbox_inches = 'tight', pad_inches = 0.05)
     plt.close()
     
-    
-
-
 def compare_conc_and_snr():
     scans = [1, 2, 4, 8, 16, 32, 64, 128, 256]
     #sample = 'D24'
@@ -2010,16 +2004,184 @@ def water_fit():
     plt.savefig('/Users/alexhill/Documents/GitHub/NMR_Analysis/Figs_For_Gil/water_sub.pdf', bbox_inches = 'tight', pad_inches = 0.05)
     plt.close()
 
-compare_conc_and_snr()
-#water_fit()
-#big_plot()
+#def poster_plots():
+lactic_acid_bounds = [1.17, 1.50]
+noise_bounds       = [-2.0, -1.0]
+pulse = 'zg30'
+snr_choice = 'brk'
+path = '/Users/alexhill/Desktop/Metabolomics/Data_Analysis/80MHzLactate'
+
+S = LoadSpectra()
+S.ReadTextFile(pulse = pulse, sample = 'LAC4500', nscan = 256, path = path)
+
+A = AnalyseSpectra()
+A.InputData(x = S.initial_ppm, y = S.initial_amplitude)
+A.FitTSP()
+ref_x, ref_y = A.tsp_centre, A.tsp_amplitude
+
+
+scans = [1, 2, 4, 8, 16, 32, 64, 128, 256]
+samples = ['LAC750', 'LAC1500' ,'LAC3000', 'LAC4500']
+pulses = ['zg', 'zg30']
+cmap = mpl.colormaps['BrBG']
+colours = cmap(np.linspace(0, 1, len(scans) + 2)) 
+X_ORIG  = []
+Y_ORIG  = []
+SNR_ORIG    = []
+X_SCALED    = []
+Y_SCALED    = []
+SNR_SCALED  = []
+fnames = []
+for sample in samples:
+    for scan in scans:
+        fname = "%s_%s_ns%s.txt" % (sample, pulse, scan)
+        fnames.append(fname)
+        S = LoadSpectra()
+        S.ReadTextFile(path = path,
+                    nscan = scan, 
+                    sample = sample,
+                    pulse = pulse)
+
+        X_ORIG.append(S.initial_ppm)
+        Y_ORIG.append(S.initial_amplitude)
+
+        A = AnalyseSpectra()
+        A.InputData(x = S.initial_ppm, y = S.initial_amplitude)
+        
+        A.SignalToNoise(signal_bounds = lactic_acid_bounds, snr_choice = snr_choice)
+        lactic_acid_snr = A.snr
+
+        snrs = lactic_acid_snr
+
+        SNR_ORIG.append(snrs)
+
+
+        A.FitTSP()
+        tsp_x, tsp_y = A.tsp_centre, A.tsp_amplitude
+        y_scale = ref_y/tsp_y
+        x_shift = ref_x - tsp_x
+        A.ScaleSpectra(y_scaling = y_scale, x_shift = x_shift)
+
+        A.SignalToNoise(signal_bounds = lactic_acid_bounds, snr_choice = snr_choice)
+        lactic_acid_snr = A.snr
+
+        snrs = lactic_acid_snr
+
+
+        X_SCALED.append(A.processed_ppm)
+        Y_SCALED.append(A.processed_amplitude)
+        SNR_SCALED.append(snrs)
+
+fnames = np.array(fnames)
+indices = np.arange(0, len(fnames), 1)
+
+d750_low_ind = indices[fnames == 'LAC750_zg30_ns32.txt'][0]
+d750_med_ind = indices[fnames == 'LAC750_zg30_ns64.txt'][0]
+d750_high_ind = indices[fnames == 'LAC750_zg30_ns256.txt'][0]
+
+d4500_low_ind = indices[fnames == 'LAC4500_zg30_ns32.txt'][0]
+d4500_med_ind = indices[fnames == 'LAC4500_zg30_ns64.txt'][0]
+d4500_high_ind = indices[fnames == 'LAC4500_zg30_ns256.txt'][0]
+
+X_CHOICE = X_SCALED
+Y_CHOICE = Y_SCALED
+
+d750x_low, d750y_low = X_CHOICE[d750_low_ind], Y_CHOICE[d750_low_ind]
+d750x_med, d750y_med = X_CHOICE[d750_med_ind], Y_CHOICE[d750_med_ind]
+d750x_high, d750y_high = X_CHOICE[d750_high_ind], Y_CHOICE[d750_high_ind]
+
+d4500x_low, d4500y_low = X_CHOICE[d4500_low_ind], Y_CHOICE[d4500_low_ind]
+d4500x_med, d4500y_med = X_CHOICE[d4500_med_ind], Y_CHOICE[d4500_med_ind]
+d4500x_high, d4500y_high = X_CHOICE[d4500_high_ind], Y_CHOICE[d4500_high_ind]
+
 
 '''
-L = LoadSimulatedSpectra()
-L.LoadSimSpec(metabolite = 'Glucose')
-xdata_glc, ydata_glc = L.ppm, L.amplitude
-L.LoadSimSpec(metabolite = 'Lactate')
-xdata_lac, ydata_lac = L.ppm, L.amplitude
-L.LoadSimSpec(metabolite = 'Citrate')
-xdata_cit, ydata_cit = L.ppm, L.amplitude
+plt.close()
+fig, axs = plt.subplots(1,1, figsize = [6,6])
+axs.plot(d1x, d1y)
+axs.plot(d2x, d2y)
+axs.plot(d3x, d3y)
+axs.set_xlim(lactic_acid_bounds)
+lims = axs.get_xlim()
+i = np.where( (d3x > lims[0]) &  (d3x < lims[1]) )[0]
+axs.set_ylim( d3y[i].min() * 1.3, d3y[i].max() * 1.3)
+plt.show()
 '''
+
+import matplotlib.pyplot as plt
+from matplotlib import gridspec
+
+cols = ['violet', 'green', 'red']
+matplotlib.rc('text', usetex=True)
+
+# Set the default font to Times New Roman
+matplotlib.rcParams['font.family'] = 'serif'
+matplotlib.rcParams['font.size'] = 14
+
+# Create figure
+fig = plt.figure(figsize=(10, 5))
+
+# Create GridSpec
+gs = gridspec.GridSpec(2, 2, width_ratios=[1, 2], height_ratios=[1, 1])
+
+# Create subplots
+ax1 = plt.subplot(gs[0, 0])
+ax2 = plt.subplot(gs[1, 0])
+ax3 = plt.subplot(gs[:, 1])
+
+ax1.plot(d750x_low, d750y_low, color = cols[0], label = '$n_{\mathrm{s}} =  2^{5}$', handlelength = 1)
+ax1.plot(d750x_med, d750y_med, color = cols[1], label = '$n_{\mathrm{s}} = 2^{6}$', handlelength = 1)
+ax1.plot(d750x_high, d750y_high, color = cols[2], label = '$n_{\mathrm{s}} = 2^{8}$', handlelength = 1)
+
+ax2.plot(d4500x_low, d4500y_low, color = cols[0], label = '$n_{\mathrm{s}} =  2^{5}$')
+ax2.plot(d4500x_med, d4500y_med, color = cols[1], label = '$n_{\mathrm{s}} = 2^{6}$')
+ax2.plot(d4500x_high, d4500y_high, color = cols[2], label = '$n_{\mathrm{s}} = 2^{8}$')
+
+ax1.set_ylim([-3.25*1e7, 2.5*1e8])
+ax2.set_ylim([-8.5*1e7, 1.8*1e9])
+ax2.set_xlabel('$\delta$ [ppm]')
+
+ax1.set_ylabel('$I(\delta)$')
+ax2.set_ylabel('$I(\delta)$')
+
+my_axs = [ax1, ax2]
+for ax in my_axs:
+    ax.set_xlim(lactic_acid_bounds)
+    ax.invert_xaxis()
+    ax.set_yticks([])
+
+my_axs = [ax1, ax2, ax3]
+
+for ax in my_axs:
+    ax.tick_params(axis='x', direction='in', which='both')
+    ax.tick_params(axis='y', direction='in', which='both')
+
+
+x_pos = sum(lactic_acid_bounds)/2.
+y_pos = 1.3*1e11
+
+ax1y = ax1.get_ylim()
+ax2y = ax2.get_ylim()
+
+ax1.annotate('$0.75 \mathrm{mmol/L}$', xy=(1.25, 2.25*1e8), xytext=(1.25, 2.25*1e8), horizontalalignment='center', color = 'k')
+ax2.annotate('$4.5 \mathrm{mmol/L}$', xy=(1.25, 1.6*1e9), xytext=(1.25, 1.6*1e9), horizontalalignment='center', color = 'k')
+
+ax1.legend(loc = 'upper left', frameon = True, fontsize = 13)
+ax3.plot(scans, SNR_ORIG[0:9], marker = 's', label = '$0.75 \mathrm{mmol/L}$')
+ax3.plot(scans, SNR_ORIG[9:18], marker = 's', label = '$1.5 \mathrm{mmol/L}$')
+ax3.plot(scans, SNR_ORIG[18:27], marker = 's', label = '$3.0 \mathrm{mmol/L}$')
+ax3.plot(scans, SNR_ORIG[27:36], marker = 's', label = '$4.5 \mathrm{mmol/L}$')
+ax3.legend(frameon = False)
+ax3.set_xscale('log')
+ax3.set_yscale('log')
+ax3.set_xlabel('Number of Scans')
+ax3.set_ylabel('$\mathrm{SNR}$')
+# Adjust layout
+plt.tight_layout()
+# Show plot
+plt.savefig('temp.pdf')
+
+#poster_plots()
+#compare_conc_and_snr()
+#water_fit()
+#big_plot()

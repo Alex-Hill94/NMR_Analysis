@@ -160,7 +160,6 @@ def plot_spectrum_with_peaks(x, y, peak_indices):
     # Show the plot
     plt.show()
 
-
 def snr_agilent(x, y, noise_bounds, signal_bounds, verbose = False):
     noise_mask = (x >= np.min(noise_bounds)) * (x <= np.max(noise_bounds))
     noise_x, noise_y = x[noise_mask], y[noise_mask]
@@ -191,7 +190,6 @@ def snr_liverpool(x, y, noise_bounds, signal_bounds):
 def snr_bruker(x, y, noise_bounds, signal_bounds, verbose = False):
     def _is_odd(num):
         return num % 2 != 0
-
 
     def _bruker_noise(n_values):
     
@@ -244,8 +242,6 @@ def snr_bruker(x, y, noise_bounds, signal_bounds, verbose = False):
         print('%s/(%s*2) SINO: %s' % (SIGNAL, NOISE, SNR))
     return SNR, SIGNAL, NOISE
 
-
-
 def comp_time_snr(sample = 'D24', pulse = 'zg30', scan = 256, sig_bounds = [3.0, 4.2], noise_bounds = [-2.0, -1.0], snr_choice = 'brk'):
     if pulse == 'zg30':
         path = "/Users/alexhill/Desktop/Metabolomics/Rerun_Data/20240119_RERUN_3"
@@ -277,8 +273,6 @@ def comp_time_snr(sample = 'D24', pulse = 'zg30', scan = 256, sig_bounds = [3.0,
         snr, sig, noise = snr_liverpool(x, y, noise_bounds, sig_bounds)
 
     return snr, sig, noise, time_taken
-
-
 
 def comp_snr():
 
@@ -415,8 +409,6 @@ def comp_snr():
    #plt.xlabel('Scans')
    #plt.ylabel('Time')
    #plt.savefig('Paper_Figs/scan_time_comp.png')
-
-
 
 def plot_pulses():
 
@@ -558,7 +550,7 @@ def plot_pulses():
 
     #print(range(num_colors))
     #print(xtick_labs)
-#
+
     cb.set_ticks(range(num_colors))
     cb.ax.set_yticklabels(xtick_labs)
     cb.set_label('Number of scans ($n_{\mathrm{s}}$)', fontsize = 13)
