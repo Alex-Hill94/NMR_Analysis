@@ -2009,7 +2009,7 @@ lactic_acid_bounds = [1.17, 1.50]
 noise_bounds       = [-2.0, -1.0]
 pulse = 'zg30'
 snr_choice = 'brk'
-path = '/Users/alexhill/Desktop/Metabolomics/Data_Analysis/80MHzLactate'
+path = '/Users/alexhill/Documents/UOL/Research/Companies/ViBo/Metabolomics/Data_Analysis/80MHzLactate'
 
 S = LoadSpectra()
 S.ReadTextFile(pulse = pulse, sample = 'LAC4500', nscan = 256, path = path)
@@ -2129,9 +2129,9 @@ ax1 = plt.subplot(gs[0, 0])
 ax2 = plt.subplot(gs[1, 0])
 ax3 = plt.subplot(gs[:, 1])
 
-ax1.plot(d750x_low, d750y_low, color = cols[0], label = '$n_{\mathrm{s}} =  2^{5}$', handlelength = 1)
-ax1.plot(d750x_med, d750y_med, color = cols[1], label = '$n_{\mathrm{s}} = 2^{6}$', handlelength = 1)
-ax1.plot(d750x_high, d750y_high, color = cols[2], label = '$n_{\mathrm{s}} = 2^{8}$', handlelength = 1)
+ax1.plot(d750x_low, d750y_low, color = cols[0], label = '$n_{\mathrm{s}} =  2^{5}$')#, handlelength = 1)
+ax1.plot(d750x_med, d750y_med, color = cols[1], label = '$n_{\mathrm{s}} = 2^{6}$')#, handlelength = 1)
+ax1.plot(d750x_high, d750y_high, color = cols[2], label = '$n_{\mathrm{s}} = 2^{8}$')#, handlelength = 1)
 
 ax2.plot(d4500x_low, d4500y_low, color = cols[0], label = '$n_{\mathrm{s}} =  2^{5}$')
 ax2.plot(d4500x_med, d4500y_med, color = cols[1], label = '$n_{\mathrm{s}} = 2^{6}$')
@@ -2178,8 +2178,10 @@ ax3.set_xlabel('Number of Scans')
 ax3.set_ylabel('$\mathrm{SNR}$')
 # Adjust layout
 plt.tight_layout()
-# Show plot
-plt.savefig('temp.pdf')
+
+## Show plot
+plt.show()
+#plt.savefig('temp.pdf')
 
 #poster_plots()
 #compare_conc_and_snr()

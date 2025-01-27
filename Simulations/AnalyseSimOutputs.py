@@ -131,6 +131,118 @@ def citrate():
     plt.savefig('citrate_bounds.pdf')
     plt.close()
 
+
+def citrate_highfield():
+
+    path = '/Users/alexhill/Software/ccpnmr3.2.0/Citrate_nonoise_700MHz.hdf5'
+
+    u = h5.File(path, 'r')
+    xdata_sim = u['700.0/x'][()]
+    ydata_sim = u['700.0/toty'][()]
+    u.close()
+
+    cdata = np.cumsum(ydata_sim)
+
+    def find_bounds(xdata, ydata, sigma = 1.):
+        def gaussian_pdf(u):
+            """
+            Gaussian probability density function.
+            """
+            return (1 / math.sqrt(2 * math.pi)) * math.exp(-u**2 / 2)
+
+        # Specify the limits of integration
+        lower_limit = -sigma  # -infinity
+        upper_limit = sigma   # +infinity
+
+        # Perform numerical integration
+        result, error_estimate = quad(gaussian_pdf, lower_limit, upper_limit)
+        llim = 0.5 - result/2
+        ulim = result/2 + 0.5
+        cdata = np.cumsum(ydata)
+        cdata = cdata/np.nanmax(cdata)
+        x_low = np.min(xdata[cdata < llim])
+        x_high = np.max(xdata[cdata > ulim])
+        return llim, ulim, x_low, x_high
+
+
+    # Enable LaTeX rendering
+    matplotlib.rc('text', usetex=True)
+
+    # Set the default font to Times New Roman
+    matplotlib.rcParams['font.family'] = 'serif'
+    matplotlib.rcParams['font.size'] = 12
+    fig, axs = plt.subplots(1,1, figsize = [6, 6])
+    #axs[1].plot(xdata_sim, cdata/np.nanmax(cdata), 'k')
+
+    color = 'tab:blue'
+
+
+    sigmas = [1,2,3,4,5]
+    sigma_low = []
+    sigma_high = []
+    for sigma in sigmas:
+        llim, ulim, x_low, x_high = find_bounds(xdata_sim, ydata_sim, sigma = sigma)
+        axs.axvline(x_low, color='grey', linewidth=1.0, alpha=0.7, linestyle = '--')    
+        axs.axvline(x_high, color='grey', linewidth=1.0, alpha=0.7, linestyle = '--')    
+        sigma_low.append(x_low)
+        sigma_high.append(x_high)
+        print(x_low, x_high)
+
+    axs.plot(xdata_sim, ydata_sim / (6.1678*1e8/(8.5*1e7)), color)
+    #axs.plot(xdata_sim, np.nanmax(ydata_sim / (6.1678*1e8/(8.5*1e7))) * cdata/np.nanmax(cdata), 'red', lw = 1.0, alpha = 1.0)
+    axs.tick_params(axis='y', labelcolor=color)
+    axs.set_xlim([2.3,2.9])
+    #axs[1].set_xlim([2.3,2.9])
+
+    axs.set_ylim([-0.1*1e8, 1. * 1e8])
+    #axs[1].set_ylim([0,1])
+
+    axs.invert_xaxis()
+    axs.set_xlabel('$\delta$ [ppm]')
+    axs.set_ylabel('$I(\delta)$', color=color)
+    ax2 = axs.twinx()
+
+
+    color = 'tab:red'
+    #ax2.set_ylabel('Normalised Cumulative Intensity', color=color)  # we already handled the x-label with ax1
+    ax2.set_ylabel('$\sum_{\delta_{\mathrm{max}}}^{\delta_\mathrm{i}} I(\delta) d\delta$', color=color)  # we already handled the x-label with ax1
+    #ax2.plot(, 'red', lw = 1.0, alpha = 1.0)
+    ax2.plot(xdata_sim, cdata/np.nanmax(cdata), color=color)
+    ax2.tick_params(axis='y', labelcolor=color)
+    my_axs = [axs, ax2]
+
+    for ax in my_axs:
+        ax.tick_params(axis='x', direction='in', which='both')
+        ax.tick_params(axis='y', direction='in', which='both')
+
+    llim, ulim = axs.get_ylim()
+
+    yrange = ulim - llim
+    y_pos = llim + 0.5* yrange
+
+    x_pos = sigma_low[0] + 0.015
+    axs.annotate('1$\sigma$', xy=(x_pos, y_pos), xytext=(x_pos, y_pos), horizontalalignment='center', color = 'grey', rotation = 90)
+    x_pos = sigma_high[0] - 0.015
+    axs.annotate('1$\sigma$', xy=(x_pos, y_pos), xytext=(x_pos, y_pos), horizontalalignment='center', color = 'grey', rotation = 270)
+
+    x_pos = sigma_low[1] + 0.015
+    axs.annotate('2$\sigma$', xy=(x_pos, y_pos), xytext=(x_pos, y_pos), horizontalalignment='center', color = 'grey', rotation = 90)
+    x_pos = sigma_high[1] - 0.015
+    axs.annotate('2$\sigma$', xy=(x_pos, y_pos), xytext=(x_pos, y_pos), horizontalalignment='center', color = 'grey', rotation = 270)
+
+    #axs.set_title('2$\sigma$ $\in$ [%s, %s]' % (np.round(sigma_low[1], 2), np.round(sigma_high[1], 2)))
+
+
+    custom_lines = [Line2D([0], [0], color='tab:blue', linestyle='-', lw = 2),
+                    Line2D([0], [0], color='grey', linestyle='-',alpha=0.5, lw = 1)]
+
+    axs.legend(custom_lines, ['CCPN Sim.', 'Fourier 80'], loc = 'upper left', frameon = False)
+    #axs[1].invert_xaxis()
+
+    plt.savefig('citrate_bounds_highfield.pdf')
+    plt.close()
+
+
 def glucose():
 
     path = '/Users/alexhill/Software/ccpnmr3.2.0/glucose_nonoise_80MHz.hdf5'
@@ -253,6 +365,132 @@ def glucose():
     #plt.show()
     plt.savefig('glucose_bounds.pdf')
     plt.close()
+
+
+def glucose_highfield():
+
+    path = '/Users/alexhill/Software/ccpnmr3.2.0/Glucose_nonoise_700MHz.hdf5'
+
+    u = h5.File(path, 'r')
+    xdata_sim_tot = u['700.0/x'][()]
+    ydata_sim_tot = u['700.0/toty'][()]
+    u.close()
+
+    #S = LoadSpectra()
+    #S.ReadTextFile(nscan = 256, sample = 'D24')
+    #xdata_data = S.initial_ppm
+    #ydata_data = S.initial_amplitude
+
+    def find_bounds(xdata, ydata, sigma = 1.):
+        def gaussian_pdf(u):
+            """
+            Gaussian probability density function.
+            """
+            return (1 / math.sqrt(2 * math.pi)) * math.exp(-u**2 / 2)
+
+        # Specify the limits of integration
+        lower_limit = -sigma  # -infinity
+        upper_limit = sigma   # +infinity
+
+        # Perform numerical integration
+        result, error_estimate = quad(gaussian_pdf, lower_limit, upper_limit)
+        llim = 0.5 - result/2
+        ulim = result/2 + 0.5
+        cdata = np.cumsum(ydata)
+        cdata = cdata/np.nanmax(cdata)
+        x_low = np.min(xdata[cdata < llim])
+        x_high = np.max(xdata[cdata > ulim])
+        return llim, ulim, x_low, x_high
+
+    xbounds_rough = [2.5, 4.3]
+    xmask = (xdata_sim_tot >= np.min(xbounds_rough)) * (xdata_sim_tot <= np.max(xbounds_rough))
+    xdata_sim = xdata_sim_tot[xmask]
+    ydata_sim = ydata_sim_tot[xmask]
+    cdata = np.cumsum(ydata_sim)
+    #xmask_data = (xdata_data >= np.min(xbounds_rough)) * (xdata_data <= np.max(xbounds_rough))
+
+    #xdata_data = xdata_data[xmask_data]
+    #ydata_data = ydata_data[xmask_data]
+
+    # Enable LaTeX rendering
+    matplotlib.rc('text', usetex=True)
+
+    # Set the default font to Times New Roman
+    matplotlib.rcParams['font.family'] = 'serif'
+    matplotlib.rcParams['font.size'] = 12
+    fig, axs = plt.subplots(1,1, figsize = [6, 6])
+    #axs[1].plot(xdata_sim, cdata/np.nanmax(cdata), 'k')
+
+    color = 'tab:blue'
+
+
+    sigmas = [1,2,3]
+    sigma_low = []
+    sigma_high = []
+    for sigma in sigmas:
+        llim, ulim, x_low, x_high = find_bounds(xdata_sim, ydata_sim, sigma = sigma)
+        axs.axvline(x_low, color='grey', linewidth=1.0, alpha=0.7, linestyle = '--')    
+        axs.axvline(x_high, color='grey', linewidth=1.0, alpha=0.7, linestyle = '--')    
+        sigma_low.append(x_low)
+        sigma_high.append(x_high)
+        print(x_low, x_high)
+
+
+    axs.plot(xdata_sim, ydata_sim, color)
+    #axs.plot(xdata_sim, np.nanmax(ydata_sim / (6.1678*1e8/(8.5*1e7))) * cdata/np.nanmax(cdata), 'red', lw = 1.0, alpha = 1.0)
+    #axs.plot(xdata_data, ydata_data/2., 'grey', lw = 0.5, alpha = 0.5)
+    axs.tick_params(axis='y', labelcolor=color)
+    axs.set_xlim([2.85,4.15])
+    #axs[1].set_xlim([2.3,2.9])
+
+    #axs.set_ylim([-0.1*1e8, 1. * 1e8])
+    #axs[1].set_ylim([0,1])
+    
+    axs.invert_xaxis()
+    axs.set_xlabel('$\delta$ [ppm]')
+    axs.set_ylabel('$I(\delta)$', color=color)
+    ax2 = axs.twinx()
+
+
+    color = 'tab:red'
+    #ax2.set_ylabel('Normalised Cumulative Intensity', color=color)  # we already handled the x-label with ax1
+    ax2.set_ylabel('$\sum_{\delta_{\mathrm{max}}}^{\delta_\mathrm{i}} I(\delta) d\delta$', color=color)  # we already handled the x-label with ax1
+    #ax2.plot(, 'red', lw = 1.0, alpha = 1.0)
+    ax2.plot(xdata_sim, cdata/np.nanmax(cdata), color=color)
+    ax2.tick_params(axis='y', labelcolor=color)
+    my_axs = [axs, ax2]
+
+    for ax in my_axs:
+        ax.tick_params(axis='x', direction='in', which='both')
+        ax.tick_params(axis='y', direction='in', which='both')
+
+    llim, ulim = axs.get_ylim()
+
+    yrange = ulim - llim
+    y_pos = llim + 0.5* yrange
+
+    x_pos = sigma_low[0] + 0.055
+    axs.annotate('1$\sigma$', xy=(x_pos, y_pos), xytext=(x_pos, y_pos), horizontalalignment='center', color = 'grey', rotation = 90)
+    x_pos = sigma_high[0] - 0.055
+    axs.annotate('1$\sigma$', xy=(x_pos, y_pos), xytext=(x_pos, y_pos), horizontalalignment='center', color = 'grey', rotation = 270)
+
+    x_pos = sigma_low[1] + 0.055
+    axs.annotate('2$\sigma$', xy=(x_pos, y_pos), xytext=(x_pos, y_pos), horizontalalignment='center', color = 'grey', rotation = 90)
+    x_pos = sigma_high[1] - 0.055
+    axs.annotate('2$\sigma$', xy=(x_pos, y_pos), xytext=(x_pos, y_pos), horizontalalignment='center', color = 'grey', rotation = 270)
+
+    #axs.set_title('2$\sigma$ $\in$ [%s, %s]' % (np.round(sigma_low[1], 2), np.round(sigma_high[1], 2)))
+
+    custom_lines = [Line2D([0], [0], color='tab:blue', linestyle='-', lw = 2),
+                    Line2D([0], [0], color='grey', linestyle='-',alpha=0.5, lw = 1)]
+
+    axs.legend(custom_lines, ['CCPN Sim.', 'Fourier 80'], loc = 'upper left', frameon = False)
+    #axs[1].invert_xaxis()
+
+    #plt.show()
+    plt.savefig('glucose_bounds_high.pdf')
+    plt.close()
+
 
 def lactate():
 
@@ -381,6 +619,125 @@ def lactate():
     plt.savefig('lactate_bounds.pdf')
     #plt.show()
     plt.close()
+
+
+def lactate_highfield():
+
+    path = '/Users/alexhill/Software/ccpnmr3.2.0/Lactate_nonoise_700MHz.hdf5'
+
+    u = h5.File(path, 'r')
+    xdata_sim_tot = u['700.0/x'][()]
+    ydata_sim_tot = u['700.0/toty'][()]
+    u.close()
+
+
+
+
+    def find_bounds(xdata, ydata, sigma = 1.):
+        def gaussian_pdf(u):
+            """
+            Gaussian probability density function.
+            """
+            return (1 / math.sqrt(2 * math.pi)) * math.exp(-u**2 / 2)
+
+        # Specify the limits of integration
+        lower_limit = -sigma  # -infinity
+        upper_limit = sigma   # +infinity
+
+        # Perform numerical integration
+        result, error_estimate = quad(gaussian_pdf, lower_limit, upper_limit)
+        llim = 0.5 - result/2
+        ulim = result/2 + 0.5
+        cdata = np.cumsum(ydata)
+        cdata = cdata/np.nanmax(cdata)
+        x_low = np.min(xdata[cdata < llim])
+        x_high = np.max(xdata[cdata > ulim])
+        return llim, ulim, x_low, x_high
+
+    xbounds_rough = [0.5, 2.5]
+    xmask = (xdata_sim_tot >= np.min(xbounds_rough)) * (xdata_sim_tot <= np.max(xbounds_rough))
+
+
+    xdata_sim = xdata_sim_tot[xmask]
+    ydata_sim = ydata_sim_tot[xmask]
+    cdata = np.cumsum(ydata_sim)
+    # Enable LaTeX rendering
+    matplotlib.rc('text', usetex=True)
+
+    # Set the default font to Times New Roman
+    matplotlib.rcParams['font.family'] = 'serif'
+    matplotlib.rcParams['font.size'] = 12
+    fig, axs = plt.subplots(1,1, figsize = [6, 6])
+    #axs[1].plot(xdata_sim, cdata/np.nanmax(cdata), 'k')
+
+    color = 'tab:blue'
+
+
+    sigmas = [1,2,3]
+    sigma_low = []
+    sigma_high = []
+    for sigma in sigmas:
+        llim, ulim, x_low, x_high = find_bounds(xdata_sim, ydata_sim, sigma = sigma)
+        axs.axvline(x_low, color='grey', linewidth=1.0, alpha=0.7, linestyle = '--')    
+        axs.axvline(x_high, color='grey', linewidth=1.0, alpha=0.7, linestyle = '--')    
+        sigma_low.append(x_low)
+        sigma_high.append(x_high)
+        print(x_low, x_high)
+
+    axs.plot(xdata_sim, ydata_sim*1.2, color)
+    #axs.plot(xdata_sim, np.nanmax(ydata_sim / (6.1678*1e8/(8.5*1e7))) * cdata/np.nanmax(cdata), 'red', lw = 1.0, alpha = 1.0)
+    axs.tick_params(axis='y', labelcolor=color)
+    axs.set_xlim([1.1,1.6])
+    #axs[1].set_xlim([2.3,2.9])
+
+    #axs.set_ylim([-0.1*1e8, 1. * 1e8])
+    #axs[1].set_ylim([0,1])
+    
+    axs.invert_xaxis()
+    axs.set_xlabel('$\delta$ [ppm]')
+    axs.set_ylabel('$I(\delta)$', color=color)
+    ax2 = axs.twinx()
+
+
+    color = 'tab:red'
+    #ax2.set_ylabel('Normalised Cumulative Intensity', color=color)  # we already handled the x-label with ax1
+    ax2.set_ylabel('$\sum_{\delta_{\mathrm{max}}}^{\delta_\mathrm{i}} I(\delta) d\delta$', color=color)  # we already handled the x-label with ax1
+    #ax2.plot(, 'red', lw = 1.0, alpha = 1.0)
+    ax2.plot(xdata_sim, cdata/np.nanmax(cdata), color=color)
+    ax2.tick_params(axis='y', labelcolor=color)
+    my_axs = [axs, ax2]
+
+    for ax in my_axs:
+        ax.tick_params(axis='x', direction='in', which='both')
+        ax.tick_params(axis='y', direction='in', which='both')
+
+    llim, ulim = axs.get_ylim()
+
+    yrange = ulim - llim
+    y_pos = llim + 0.5* yrange
+
+    x_pos = sigma_low[0] + 0.055
+    axs.annotate('1$\sigma$', xy=(x_pos, y_pos), xytext=(x_pos, y_pos), horizontalalignment='center', color = 'grey', rotation = 90)
+    x_pos = sigma_high[0] - 0.055
+    axs.annotate('1$\sigma$', xy=(x_pos, y_pos), xytext=(x_pos, y_pos), horizontalalignment='center', color = 'grey', rotation = 270)
+
+    x_pos = sigma_low[1] + 0.055
+    axs.annotate('2$\sigma$', xy=(x_pos, y_pos), xytext=(x_pos, y_pos), horizontalalignment='center', color = 'grey', rotation = 90)
+    x_pos = sigma_high[1] - 0.055
+    axs.annotate('2$\sigma$', xy=(x_pos, y_pos), xytext=(x_pos, y_pos), horizontalalignment='center', color = 'grey', rotation = 270)
+
+    #axs.set_title('2$\sigma$ $\in$ [%s, %s]' % (np.round(sigma_low[1], 2), np.round(sigma_high[1], 2)))
+
+    custom_lines = [Line2D([0], [0], color='tab:blue', linestyle='-', lw = 2),
+                    Line2D([0], [0], color='grey', linestyle='-',alpha=0.5, lw = 1)]
+
+    axs.legend(custom_lines, ['CCPN Sim.', 'Fourier 80'], loc = 'upper left', frameon = False)
+    #axs[1].invert_xaxis()
+
+    plt.savefig('lactate_bounds_highfield.pdf')
+    #plt.show()
+    plt.close()
+
 
 def all_spec():
 
@@ -580,8 +937,9 @@ def all_spec():
 
 
 
-glucose()
-lactate()
-citrate()
-
+#glucose()
+#lactate()
+#citrate()
+#glucose_highfield()
+citrate_highfield()
 #all_spec()

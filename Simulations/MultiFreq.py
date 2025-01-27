@@ -579,7 +579,7 @@ def all_spec():
 
 
 
-path = '/Users/alexhill/Desktop/TemplateSpectra1.hdf5'
+path = '/Users/alexhill/Documents/UOL/Research/Companies/ViBo/TemplateSpectra1.hdf5'
 metabs = ['Glucose', 'Lactate', 'Citrate']
 freqs = np.linspace(80, 700.0, 63)
 linewidth = 1.0

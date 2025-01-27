@@ -27,7 +27,7 @@ def getData(exp):
     S.ReadTextFile(path = path, filename = filename)
     A = AnalyseSpectra()
     A.InputData(x = S.initial_ppm, y = S.initial_amplitude)
-    A.SignalToNoise(signal_bounds = lactic_acid_bounds, snr_choice = 'agi')
+    A.SignalToNoise(signal_bounds = lactic_acid_bounds, snr_choice = 'brk')
     sig = A.spectra_signal
     noise = A.spectra_noise
     snr = A.snr
