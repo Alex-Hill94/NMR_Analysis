@@ -1,6 +1,6 @@
 import sys
 # caution: path[0] is reserved for script path (or '' in REPL)
-sys.path.insert(1, '/Users/alexhill/Documents/GitHub/NMR_Analysis/Fourier90Runs')
+sys.path.insert(1, '/Users/alexhill/Documents/GitHub/NMR_Analysis/PaperWork/General')
 from NMRClassesH5 import *
 import matplotlib as mpl
 import os 
@@ -13,7 +13,7 @@ from scipy import stats
 import statsmodels.api as sm
 
 
-path = '/Users/alexhill/Documents/GitHub/NMR_Analysis/PaperWork/General'
+path = '/Users/alexhill/Documents/GitHub/NMR_Analysis/PaperWork/General/DataSource'
 
 lactic_acid_bounds = [1.17, 1.50]
 glucose_bounds = [3.19, 3.98]
@@ -138,11 +138,11 @@ for substance in ['Lactate', 'Glucose', 'Citrate']:
     plt.ylabel('Intensity [Scaled Units]')
     plt.legend()
     plt.grid(True)
-    plt.savefig(substance+'_80MHz_Bounds.png')
-    plt.close()
+    #plt.savefig(substance+'_80MHz_Bounds.png')
+    #plt.close()
     # Print the regression summary
-    print(results.summary())
-
+    #print(results.summary())
+    plt.show()
 
 '''
 

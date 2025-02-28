@@ -27,7 +27,7 @@ class LoadSpectra:
         self.time_taken = []
         self.nscans = []
     def ReadTextFile(self,
-                    path = "/Users/alexhill/Desktop/Metabolomics/Data_Analysis/BrukerRerun3Data",
+                    path = "/Users/alexhill/Documents/UOL/Research/Companies/ViBo/Metabolomics/Data_Analysis/BrukerRerun3Data",
                     sample = 'D24',
                     pulse = 'zg30',
                     nscan = '256', 
@@ -78,7 +78,7 @@ class LoadSpectra:
         self.nscans = n_scans
 
     def ReadRawData(self,
-                    path =  "/Users/alexhill/Desktop/Metabolomics/Rerun_Data/20240119_RERUN_3",
+                    path =  "/Users/alexhill/Documents/UOL/Research/Companies/ViBo/Metabolomics/Rerun_Data/20240119_RERUN_3",
                     sample = 'D24',
                     pulse = 'zg30',
                     nscan = 256   

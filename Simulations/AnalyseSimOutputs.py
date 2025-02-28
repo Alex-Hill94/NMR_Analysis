@@ -58,7 +58,7 @@ def citrate():
 
     # Set the default font to Times New Roman
     matplotlib.rcParams['font.family'] = 'serif'
-    matplotlib.rcParams['font.size'] = 12
+    matplotlib.rcParams['font.size'] = 15
     fig, axs = plt.subplots(1,1, figsize = [6, 6])
     #axs[1].plot(xdata_sim, cdata/np.nanmax(cdata), 'k')
 
@@ -76,9 +76,9 @@ def citrate():
         sigma_high.append(x_high)
 
 
-    axs.plot(xdata_sim, ydata_sim / (6.1678*1e8/(8.5*1e7)), color)
+    axs.plot(xdata_sim, ydata_sim / (6.1678*1e8/(8.5*1e7)), color, lw = 1.7)
     #axs.plot(xdata_sim, np.nanmax(ydata_sim / (6.1678*1e8/(8.5*1e7))) * cdata/np.nanmax(cdata), 'red', lw = 1.0, alpha = 1.0)
-    axs.plot(xdata_data, ydata_data, 'grey', lw = 0.5, alpha = 0.5)
+    axs.plot(xdata_data, ydata_data, 'grey', lw = 0.7, alpha = 0.5)
     axs.tick_params(axis='y', labelcolor=color)
     axs.set_xlim([2.3,2.9])
     #axs[1].set_xlim([2.3,2.9])
@@ -123,12 +123,12 @@ def citrate():
 
 
     custom_lines = [Line2D([0], [0], color='tab:blue', linestyle='-', lw = 2),
-                    Line2D([0], [0], color='grey', linestyle='-',alpha=0.5, lw = 1)]
+                    Line2D([0], [0], color='grey', linestyle='-',alpha=0.5, lw = 2)]
 
-    axs.legend(custom_lines, ['CCPN Sim.', 'Fourier 80'], loc = 'upper left', frameon = False)
+    axs.legend(custom_lines, ['CcpNMR', 'Fourier 80'], loc = 'upper left', frameon = False)
     #axs[1].invert_xaxis()
-
-    plt.savefig('citrate_bounds.pdf')
+    #plt.show()
+    plt.savefig('citrate_bounds.pdf', pad_inches = 0.05, bbox_inches='tight')
     plt.close()
 
 
@@ -293,7 +293,7 @@ def glucose():
 
     # Set the default font to Times New Roman
     matplotlib.rcParams['font.family'] = 'serif'
-    matplotlib.rcParams['font.size'] = 12
+    matplotlib.rcParams['font.size'] = 15
     fig, axs = plt.subplots(1,1, figsize = [6, 6])
     #axs[1].plot(xdata_sim, cdata/np.nanmax(cdata), 'k')
 
@@ -311,9 +311,9 @@ def glucose():
         sigma_high.append(x_high)
 
 
-    axs.plot(xdata_sim, ydata_sim, color)
+    axs.plot(xdata_sim, ydata_sim, color, lw = 1.7)
     #axs.plot(xdata_sim, np.nanmax(ydata_sim / (6.1678*1e8/(8.5*1e7))) * cdata/np.nanmax(cdata), 'red', lw = 1.0, alpha = 1.0)
-    axs.plot(xdata_data, ydata_data/2., 'grey', lw = 0.5, alpha = 0.5)
+    axs.plot(xdata_data, ydata_data/2., 'grey', lw = 0.7, alpha = 0.5)
     axs.tick_params(axis='y', labelcolor=color)
     axs.set_xlim([2.85,4.15])
     #axs[1].set_xlim([2.3,2.9])
@@ -357,13 +357,13 @@ def glucose():
     #axs.set_title('2$\sigma$ $\in$ [%s, %s]' % (np.round(sigma_low[1], 2), np.round(sigma_high[1], 2)))
 
     custom_lines = [Line2D([0], [0], color='tab:blue', linestyle='-', lw = 2),
-                    Line2D([0], [0], color='grey', linestyle='-',alpha=0.5, lw = 1)]
+                    Line2D([0], [0], color='grey', linestyle='-',alpha=0.5, lw = 2)]
 
-    axs.legend(custom_lines, ['CCPN Sim.', 'Fourier 80'], loc = 'upper left', frameon = False)
+    axs.legend(custom_lines, ['CcpNMR', 'Fourier 80'], loc = 'upper left', frameon = False)
     #axs[1].invert_xaxis()
 
     #plt.show()
-    plt.savefig('glucose_bounds.pdf')
+    plt.savefig('glucose_bounds.pdf', pad_inches = 0.05, bbox_inches='tight')
     plt.close()
 
 
@@ -547,7 +547,7 @@ def lactate():
 
     # Set the default font to Times New Roman
     matplotlib.rcParams['font.family'] = 'serif'
-    matplotlib.rcParams['font.size'] = 12
+    matplotlib.rcParams['font.size'] = 15
     fig, axs = plt.subplots(1,1, figsize = [6, 6])
     #axs[1].plot(xdata_sim, cdata/np.nanmax(cdata), 'k')
 
@@ -565,9 +565,9 @@ def lactate():
         sigma_high.append(x_high)
 
 
-    axs.plot(xdata_sim, ydata_sim*1.2, color)
+    axs.plot(xdata_sim, ydata_sim*1.2, color, lw = 1.7)
     #axs.plot(xdata_sim, np.nanmax(ydata_sim / (6.1678*1e8/(8.5*1e7))) * cdata/np.nanmax(cdata), 'red', lw = 1.0, alpha = 1.0)
-    axs.plot(xdata_data, ydata_data, 'grey', lw = 0.5, alpha = 0.5)
+    axs.plot(xdata_data, ydata_data, 'grey', lw = 0.7, alpha = 0.5)
     axs.tick_params(axis='y', labelcolor=color)
     axs.set_xlim([1.1,1.6])
     #axs[1].set_xlim([2.3,2.9])
@@ -611,12 +611,12 @@ def lactate():
     #axs.set_title('2$\sigma$ $\in$ [%s, %s]' % (np.round(sigma_low[1], 2), np.round(sigma_high[1], 2)))
 
     custom_lines = [Line2D([0], [0], color='tab:blue', linestyle='-', lw = 2),
-                    Line2D([0], [0], color='grey', linestyle='-',alpha=0.5, lw = 1)]
+                    Line2D([0], [0], color='grey', linestyle='-',alpha=0.5, lw = 2)]
 
-    axs.legend(custom_lines, ['CCPN Sim.', 'Fourier 80'], loc = 'upper left', frameon = False)
+    axs.legend(custom_lines, ['CcpNMR', 'Fourier 80'], loc = 'upper left', frameon = False)
     #axs[1].invert_xaxis()
 
-    plt.savefig('lactate_bounds.pdf')
+    plt.savefig('lactate_bounds.pdf', pad_inches = 0.05, bbox_inches='tight')
     #plt.show()
     plt.close()
 
@@ -937,9 +937,9 @@ def all_spec():
 
 
 
-#glucose()
-#lactate()
-#citrate()
+glucose()
+lactate()
+citrate()
 #glucose_highfield()
-citrate_highfield()
+#citrate_highfield()
 #all_spec()
